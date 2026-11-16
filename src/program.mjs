@@ -5,11 +5,11 @@
 //   Weeks 9-12 Peak   – strongest sets, the longest hike; week 12 ends with a mile swim and a CSS retest
 //   Weeks 4 and 8 are deloads (about 60% of the volume) so the body can absorb the work.
 //
-// Each session is built from movement slots (see data/exercises.mjs); the generator picks the best exercise your gym
+// Each session is built from movement slots (see catalog/exercises.mjs); the generator picks the best exercise your gym
 // actually has, and lists the swaps. See docs/RESEARCH.md for why the program is shaped this way.
 
-import { EXERCISES, SLOTS, pickForSlot, canDo } from './data/exercises.mjs'
-import { GYMS, availableAt } from './data/equipment.mjs'
+import { EXERCISES, SLOTS, pickForSlot, canDo } from './catalog/exercises.mjs'
+import { GYMS, availableAt } from './catalog/equipment.mjs'
 import { swimSession } from './swim.mjs'
 
 export const PROGRAM_WEEKS = 12

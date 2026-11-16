@@ -1,8 +1,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { weekPlan, buildSession, locate, suggestLoad, programOverview } from '../src/program.mjs'
-import { availableAt } from '../src/data/equipment.mjs'
-import { EXERCISES, SLOTS, canDo } from '../src/data/exercises.mjs'
+import { availableAt } from '../src/catalog/equipment.mjs'
+import { EXERCISES, SLOTS, canDo } from '../src/catalog/exercises.mjs'
 
 const base = { gyms: ['planet-fitness', 'ymca'], daysPerWeek: 5, startDate: '2026-11-16', poolLength: 25, poolUnit: 'yd', equipmentOverrides: {} }
 

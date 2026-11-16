@@ -28,7 +28,7 @@ Weeks 4 and 8 are deloads. The default week (5 days) is: Mon Hike Legs · Tue Sw
 
 ## Gym equipment
 
-Neither chain publishes one equipment list, and clubs vary. PainCave marks each item `standard`, `common` or `varies` per gym (`src/data/equipment.mjs`). It assumes standard and common items are there and varies items aren't, and you override per club with `equipmentOverrides`.
+Neither chain publishes one equipment list, and clubs vary. PainCave marks each item `standard`, `common` or `varies` per gym (`src/catalog/equipment.mjs`). It assumes standard and common items are there and varies items aren't, and you override per club with `equipmentOverrides`.
 
 **Planet Fitness.** Machine-heavy. It has Smith machines, dumbbells (usually up to about 60-75 lb), benches, cable stations, selectorized machines (leg press, leg extension and curl, hip abductor and adductor, chest and shoulder press, lat pulldown, seated row, pec deck, ab crunch), the 30-Minute Express Circuit (10 strength machines plus 10 step stations) and a big cardio floor. **There are no barbells, no squat racks and no pool**, so PF squats use the Smith machine and PF-only swim days become dryland sessions with a warning.
 
