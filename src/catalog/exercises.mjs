@@ -188,6 +188,42 @@ export const EXERCISES = {
   },
 }
 
+// ── Gentle variations used by imported plans (not used by the generated program's slots) ─────────────
+Object.assign(EXERCISES, {
+  sit_to_stand: {
+    name: 'Supported sit-to-stand', equipment: ['bench'], muscles: ['quads', 'glutes'], goals: ['hike'], increment: 0,
+    cues: ['Feet under knees', 'Hands on thighs or a rail as needed', 'Stand tall, sit back slowly'],
+  },
+  supported_calf_raise: {
+    name: 'Supported calf raise', equipment: [], muscles: ['calves'], goals: ['hike'], increment: 0,
+    cues: ['Hold a rail', 'Rise smoothly', 'Lower heels under control'],
+  },
+  dead_bug_heel_slide: {
+    name: 'Dead bug heel slide', equipment: ['mat'], muscles: ['abs'], goals: ['core'], perSide: true, increment: 0,
+    cues: ['On your back, knees bent', 'Slide one heel away and back', 'Keep breathing; trunk steady'],
+  },
+  glute_bridge: {
+    name: 'Glute bridge', equipment: ['mat'], muscles: ['glutes', 'hamstrings'], goals: ['hike'], increment: 0,
+    cues: ['Feet flat, knees bent', 'Lift hips gently', 'No arching, no breath-holding'],
+  },
+  low_step_up: {
+    name: 'Low supported step-up', equipment: [], muscles: ['quads', 'glutes'], goals: ['hike'], perSide: true, increment: 0,
+    cues: ['4-6 inch step and a rail', 'Whole foot on the step', 'Lower slowly'],
+  },
+  high_incline_pushup: {
+    name: 'High incline push-up', equipment: [], muscles: ['chest', 'triceps'], goals: ['swim'], increment: 0,
+    cues: ['Hands on a high bar or wall', 'Body in one line', 'Exhale as you push'],
+  },
+  seated_lateral_raise: {
+    name: 'Seated lateral raise', equipment: ['dumbbells', 'bench'], muscles: ['shoulders'], goals: ['swim'], increment: 2.5,
+    cues: ['Very light dumbbells', 'Lift to a comfortable height', 'No shrugging'],
+  },
+  seated_anti_rotation_press: {
+    name: 'Seated cable anti-rotation press', equipment: ['cable_station'], muscles: ['obliques', 'abs'], goals: ['core'], perSide: true, increment: 2.5,
+    cues: ['Sit stable, side-on to the cable', 'Press hands forward and back', 'Do not let it twist you'],
+  },
+})
+
 /**
  * Movement slots used by the program. Candidates are in order of preference; the first one whose equipment is
  * available is chosen, the rest are listed as swaps.

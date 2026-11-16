@@ -43,7 +43,15 @@
   "ball_rollout": "ball",
   "plank": "plank",
   "hollow_hold": "plank",
-  "prone_flutter_kick": "plank"
+  "prone_flutter_kick": "plank",
+  "sit_to_stand": "splitsquat",
+  "supported_calf_raise": "calf",
+  "dead_bug_heel_slide": "plank",
+  "glute_bridge": "plank",
+  "low_step_up": "lunge",
+  "high_incline_pushup": "pushup",
+  "seated_lateral_raise": "dbpress",
+  "seated_anti_rotation_press": "cable"
  },
  "files": {
   "squat": {
@@ -188,7 +196,7 @@
    "page": "https://commons.wikimedia.org/wiki/File:Woman_using_a_seated_cable_row_machine_at_the_gym.jpg",
    "license": "CC0",
    "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
-   "artist": "Miguel Angel Omaña Rojas"
+   "artist": "Miguel Angel Oma\u00f1a Rojas"
   },
   "dbbench": {
    "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Personal_training_dumbbell_chest_press.jpg/500px-Personal_training_dumbbell_chest_press.jpg",

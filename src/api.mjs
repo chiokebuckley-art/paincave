@@ -4,7 +4,8 @@
 
 import { EQUIPMENT, GYMS, availableAt } from './catalog/equipment.mjs'
 import { EXERCISES, SLOTS } from './catalog/exercises.mjs'
-import { programOverview, weekPlan, buildSession, locate, PROGRAM_WEEKS, SESSION_INFO } from './program.mjs'
+import { programOverview, weekPlan, buildSession, locate, PROGRAM_WEEKS, SESSION_INFO, weeksOf } from './program.mjs'
+import { validatePlan } from './plan-import.mjs'
 import { normalizeSwim, swimMetrics, swimStats, criticalSwimSpeed, formatTime } from './swim.mjs'
 import { nutritionTargets, bodyStats } from './nutrition.mjs'
 
@@ -60,27 +61,30 @@ export function normalizeProfile(input, existing = null) {
     for (const id of Object.keys(map ?? {})) if (!EQUIPMENT[id]) errs.push(`equipmentOverrides.${gym}: unknown equipment ${id}`)
   }
   if (errs.length) throw httpError(400, errs.join('; '))
+  if ('customPlan' in (input ?? {})) p.customPlan = validatePlan(input.customPlan)
   return p
 }
 
 function normalizeWorkout(w) {
   const errs = []
   if (!DATE.test(w.date ?? '')) errs.push('date must be YYYY-MM-DD')
-  if (w.type && !SESSION_INFO[w.type]) errs.push(`type must be one of ${Object.keys(SESSION_INFO).join(', ')}`)
+  if (w.type && !SESSION_INFO[w.type] && !['plan_strength', 'plan_conditioning'].includes(w.type)) errs.push(`type must be one of ${Object.keys(SESSION_INFO).join(', ')}`)
   const exercises = (w.exercises ?? []).map((e, i) => {
     if (!EXERCISES[e.exerciseId] && !e.name) errs.push(`exercises[${i}]: unknown exerciseId and no name`)
+    if (e.exerciseId && !EXERCISES[e.exerciseId] && !/^custom-[a-z0-9-]+$/.test(e.exerciseId)) errs.push(`exercises[${i}]: unknown exerciseId ${e.exerciseId}`)
     const sets = (e.sets ?? []).map((s) => ({
       reps: s.reps != null ? Number(s.reps) : null,
       weight: s.weight != null ? Number(s.weight) : null,
       seconds: s.seconds != null ? Number(s.seconds) : null,
       rpe: s.rpe != null ? Number(s.rpe) : null,
+      rir: s.rir != null ? Number(s.rir) : null,
     }))
     if (!sets.length) errs.push(`exercises[${i}] needs at least one set`)
-    if (e.slot != null && !SLOTS[e.slot]) errs.push(`exercises[${i}]: unknown slot ${e.slot}`)
+    if (e.slot != null && !SLOTS[e.slot] && !/^p\d{1,2}$/.test(e.slot)) errs.push(`exercises[${i}]: unknown slot ${e.slot}`)
     return { exerciseId: e.exerciseId ?? null, slot: e.slot ?? null, name: e.name ?? EXERCISES[e.exerciseId]?.name, sets, note: e.note }
   })
   if (errs.length) throw httpError(400, errs.join('; '))
-  return { date: w.date, sessionKey: w.sessionKey ?? null, type: w.type ?? null, gymId: w.gymId ?? null, durationMin: w.durationMin != null ? Number(w.durationMin) : null, rpe: w.rpe != null ? Number(w.rpe) : null, exercises, cardio: w.cardio ?? null, notes: w.notes ?? '' }
+  return { date: w.date, sessionKey: w.sessionKey ?? null, type: w.type ?? null, gymId: w.gymId ?? null, durationMin: w.durationMin != null ? Number(w.durationMin) : null, activeMin: w.activeMin != null ? Number(w.activeMin) : null, rpe: w.rpe != null ? Number(w.rpe) : null, option: w.option ?? null, exercises, cardio: w.cardio ?? null, notes: w.notes ?? '' }
 }
 
 function normalizeHike(h) {
@@ -131,7 +135,7 @@ function requireProfile(store) {
 function ctxFor(store, profile) {
   // CSS is measured in the pool unit it was swum in; only use it if it matches today's pool.
   const test = store.list('swims').find((s) => s.type === 'css_test' && s.cssPer100)
-  return { history: store.list('workouts'), cssPer100: test && test.unit === profile.poolUnit ? test.cssPer100 : null }
+  return { history: store.list('workouts'), cssPer100: test && test.unit === profile.poolUnit ? test.cssPer100 : null, weightStep: profile.weightStep ?? 5 }
 }
 
 const slotsOf = (x) => (x.slot ? [x.slot] : Object.keys(SLOTS).filter((s) => SLOTS[s].includes(x.exerciseId)))
@@ -150,7 +154,8 @@ function tracker(store) {
       const e = by.get(day.sessionKey)
       if (!e || day.session.type === 'rest') return false
       const ex = day.session.exercises
-      return ex?.length ? ex.every((x) => e.slots.has(x.slot)) : true
+      const required = ex?.filter((x) => !x.optional)
+      return required?.length ? required.every((x) => e.slots.has(x.slot)) : true
     },
     loggedSlots: (key) => [...(by.get(key)?.slots ?? [])],
   }
@@ -159,7 +164,7 @@ function tracker(store) {
 /** Every logged set of one exercise in time order, each marked isPr when it beat the previous best weight. */
 function liftEntries(store, exerciseId) {
   const rows = store.list('workouts')
-    .flatMap((w) => w.exercises.filter((e) => e.exerciseId === exerciseId).map((e) => ({ date: w.date, createdAt: w.createdAt, workoutId: w.id, sessionKey: w.sessionKey, slot: e.slot, sets: e.sets })))
+    .flatMap((w) => w.exercises.filter((e) => e.exerciseId === exerciseId).map((e) => ({ date: w.date, createdAt: w.createdAt, workoutId: w.id, sessionKey: w.sessionKey, slot: e.slot, name: e.name, sets: e.sets })))
     .sort((a, b) => a.date.localeCompare(b.date) || (a.createdAt ?? '').localeCompare(b.createdAt ?? ''))
   let best = 0
   return rows.map((r) => {
@@ -276,7 +281,7 @@ function buildRoutes() {
     route('GET', '/api/program', ({ store }) => {
       const p = requireProfile(store)
       const trk = tracker(store)
-      const weeks = Array.from({ length: PROGRAM_WEEKS }, (_, i) => {
+      const weeks = Array.from({ length: weeksOf(p) }, (_, i) => {
         const w = weekPlan(i + 1, p, ctxFor(store, p))
         const training = w.days.filter((d) => d.session.type !== 'rest')
         return { week: w.week, phase: w.phase, deload: w.deload, sessions: training.length, completed: training.filter((d) => trk.done(d)).length }
@@ -312,7 +317,7 @@ function buildRoutes() {
       const p = requireProfile(store)
       if (!SESSION_INFO[params.type]) throw httpError(404, 'Unknown session type')
       const week = Number(query.get('week') ?? 1)
-      if (!(week >= 1 && week <= PROGRAM_WEEKS)) throw httpError(400, `week must be 1-${PROGRAM_WEEKS}`)
+      if (!(week >= 1 && week <= weeksOf(p))) throw httpError(400, `week must be 1-${weeksOf(p)}`)
       return buildSession(params.type, week, p, ctxFor(store, p))
     }),
 
@@ -377,7 +382,7 @@ function buildRoutes() {
 
     route('GET', '/api/stats/lifts', ({ store, query }) => liftStats(store, query.get('today') ?? today())),
     route('GET', '/api/exercises/:id/entries', ({ store, params }) => {
-      if (!EXERCISES[params.id]) throw httpError(404, 'Unknown exercise')
+      if (!EXERCISES[params.id] && !params.id.startsWith('custom-')) throw httpError(404, 'Unknown exercise')
       return liftEntries(store, params.id)
     }),
 

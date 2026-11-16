@@ -42,6 +42,24 @@ On your iPhone, open the Pages URL in Safari, then **Share → Add to Home Scree
 
 **Your data stays on the phone.** Use **Settings → Download backup** now and then, and **Restore** to move it to another phone or browser. Clearing Safari's website data erases it.
 
+## Upload your own plan (PDF)
+
+**Settings → Upload my plan (PDF)**, also offered at first setup and on the Plan tab. The PDF is read **on the phone** with a bundled copy of pdf.js (`public/vendor/pdfjs/`), so nothing is uploaded anywhere. `src/plan-import.mjs` keeps **only the workouts**:
+- the weekly schedule
+- each day's exercises (sets × reps, rest, form cue, gym alternative), plus the first-visit dose
+- the pool, bike and walking blocks
+- the warm-up, effort and cool-down routine
+- the week-by-week review stages and the progression rule
+
+Safety notes, pacing, nutrition, tracking forms and sources are left out.
+
+Before the plan replaces the PainCave program, a review screen shows what was found. Logging then follows the plan:
+- Each set records weight, reps, sets and **reps in reserve**.
+- Pool, bike and walk days record total minutes, active minutes and effort.
+- The next-visit hint uses the plan's own rule: add 1 rep at a time, and after two easy visits at the top of the range, add the smallest weight step and drop back to the low end.
+
+**Settings → Use PainCave plan** switches back, and your logs are kept. The reader expects a plan laid out like most coach and clinician handouts: a DAY / FOCUS table and per-day pages with EXERCISE tables.
+
 ## The app (`public/`)
 
 Built from the Claude Design handoff (`docs/design/`). It uses plain HTML, CSS and JS, with no build step.

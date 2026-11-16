@@ -172,12 +172,14 @@ const currentWeek = () => (S.program?.now?.status === 'active' ? S.program.now.w
 // ── Formatting helpers for prescriptions ───────────────────────────────────────────────────────────────
 const rxText = (p) => {
   if (!p) return ''
+  if (p.text) return p.text.replace(/\s*x\s*/, ' × ').replace(/(\d)-(\d)/g, '$1–$2')
   const amount = p.reps ? (p.reps[0] === p.reps[1] ? p.reps[0] : `${p.reps[0]}–${p.reps[1]}`) : p.seconds ? `${p.seconds} s` : `${p.steps} steps`
   return `${p.sets} × ${amount}${p.perSide ? ' /side' : ''}`
 }
 const amountLabel = (p) => (p?.unit === 'seconds' ? 'Seconds' : p?.unit === 'steps' ? 'Steps' : 'Reps')
 const amountStep = (p) => (p?.unit === 'seconds' ? 5 : p?.unit === 'steps' ? 2 : 1)
-const isStrength = (t) => t === 'lower' || t === 'upper'
+const isStrength = (t) => t === 'lower' || t === 'upper' || t === 'plan_strength'
+const planOn = () => !!S.profile?.customPlan
 
 // ── Screens ────────────────────────────────────────────────────────────────────────────────────────────
 function viewToday() {
@@ -207,19 +209,28 @@ function viewToday() {
   const deload = t.deload ? ' · Deload' : ''
   if (isStrength(s.type)) {
     const ex = s.exercises
-    const done = ex.filter((e) => e.done).length
-    let html = head(`${s.title} day`, `Week ${t.week} of 12 · ${done} of ${ex.length} done${deload}${doneChip}`)
+    const req = ex.filter((e) => !e.optional)
+    const done = req.filter((e) => e.done).length
+    const weeks = S.profile.customPlan?.weeks ?? 12
+    let html = head(`${s.title} day`, `Week ${t.week} of ${weeks} · ${done} of ${req.length} done${deload}${doneChip}`)
     if (t.weekNote) html += `<div class="banner">${esc(t.weekNote)}</div>`
-    html += `<div class="glass pad" style="margin-top:18px"><details class="mini"><summary>Warm-up · ${esc(s.gymName)}</summary><div style="margin-top:6px">${s.warmup.map(esc).join('<br>')}</div></details></div>`
+    if (s.firstVisit) html += `<div class="glass pad" style="margin-top:14px"><div class="mini"><b style="color:var(--on-photo)">First visits:</b> ${esc(s.firstVisit)}</div></div>`
+    html += `<div class="glass pad" style="margin-top:${s.firstVisit ? 10 : 18}px"><details class="mini"><summary>${s.gymName ? `Warm-up · ${esc(s.gymName)}` : 'Warm-up, effort, rest &amp; cool-down'}</summary><div style="margin-top:6px;line-height:1.5">${s.warmup.map(esc).join('<br><br>')}</div></details></div>`
     if (S.showAll) html += allGrid()
     else {
       html += `<div class="grid">${ex.map((e) => {
         const lt = e.loggedToday?.[0]
-        const last = lt ? `Today · ${lt.weight} ${unit()}` : e.suggestion?.weight != null ? `Last ${Math.max(0, ...e.suggestion.lastSets.map((x) => x.weight ?? 0))} · try ${e.suggestion.weight} ${unit()}` : e.suggestion ? 'Last: bodyweight' : 'No sets yet'
+        const sg = e.suggestion
+        const lastW = sg?.lastSets ? Math.max(0, ...sg.lastSets.map((x) => x.weight ?? 0)) : null
+        const last = lt ? `Today · ${lt.weight} ${unit()}`
+          : !sg?.lastSets ? 'No sets yet'
+          : sg.weight != null && sg.weight !== lastW ? `Last ${lastW} · try ${sg.weight} ${unit()}`
+          : sg.reps ? `Last ${lastW || 'BW'} · next ${sg.reps} reps`
+          : lastW ? `Last ${lastW} ${unit()}` : 'Last: bodyweight'
         return `<button class="machine" data-act="openPlanned" data-slot="${e.slot}">
           <div class="photo">${photoHtml(e.exerciseId, e.name)}</div>
           <div class="meta"><div class="name-row"><div class="name">${esc(e.name)}</div>${e.done ? '<div class="pill-done">Done</div>' : ''}</div>
-          <div class="target">Plan: ${esc(rxText(e.prescription))}</div><div class="last">${esc(last)}</div></div></button>`
+          <div class="target">${e.optional ? 'Later option: ' : 'Plan: '}${esc(rxText(e.prescription))}</div><div class="last">${esc(last)}</div></div></button>`
       }).join('')}</div>`
       if (s.finisher) html += `<div class="glass session"><div class="t">Finisher</div><p>${esc(s.finisher.plan)}</p></div>`
     }
@@ -228,13 +239,13 @@ function viewToday() {
   }
 
   if (s.type === 'rest') {
-    return head('Rest day', `Week ${t.week} of 12${deload}`) +
+    return head('Rest day', `Week ${t.week} of ${S.profile.customPlan?.weeks ?? 12}${deload}`) +
       `<div class="glass session"><div class="t">Rest day</div><p>Nothing planned. Recover — or log something extra below.</p><p>${esc(s.plan)}</p></div>` +
       (S.showAll ? allGrid() : '') +
       `<button class="toggle" data-act="toggleAll">${S.showAll ? 'Hide machines' : 'Log something extra'}</button>`
   }
 
-  let html = head(s.title.replace('Swim: ', 'Swim · '), `Week ${t.week} of 12${s.gymName ? ' · ' + esc(s.gymName) : ''}${deload}${doneChip}`)
+  let html = head(s.title.replace('Swim: ', 'Swim · '), `Week ${t.week} of ${S.profile.customPlan?.weeks ?? 12}${s.gymName ? ' · ' + esc(s.gymName) : ''}${deload}${doneChip}`)
   if (t.weekNote) html += `<div class="banner">${esc(t.weekNote)}</div>`
   html += `<div class="glass session">${sessionBody(s)}${sessionAction(s, t)}</div>`
   html += S.showAll ? allGrid() : ''
@@ -243,6 +254,15 @@ function viewToday() {
 }
 
 function sessionBody(s) {
+  if (s.type === 'plan_conditioning') {
+    const blocks = (list) => list.map((b) => `<div class="row" style="display:block;margin-top:8px"><div style="font-weight:600">${esc(b.name)}</div>
+      <div class="note" style="font-size:14px;color:var(--on-photo-2)">${esc(b.start ?? b.dose ?? '')}</div>
+      ${b.later ? `<div class="note">Later, if tolerated: ${esc(b.later)}</div>` : ''}${b.note ? `<div class="note">${esc(b.note)}</div>` : ''}</div>`).join('')
+    return `<div class="t">${esc(s.subtitle || s.focus)}</div><p>${esc(s.focus)}${s.budget ? ` · ${esc(s.budget)}` : ''}</p>` +
+      s.options.map((o) => `<div class="block"><div class="bn">${esc(o.name)}</div>${o.blocks ? blocks(o.blocks) : `<div class="note" style="font-size:15px;color:var(--on-photo)">${esc(o.text)}</div>`}</div>`).join('') +
+      (s.blocks.length ? `<div class="block">${blocks(s.blocks)}</div>` : '') +
+      s.notes.map((n) => `<details class="block mini"><summary>${esc(n.name)}</summary><div class="note">${esc(n.text)}</div></details>`).join('')
+  }
   if (s.swim) {
     const u = s.swim.poolUnit
     return `<div class="t">${s.swim.totalDistance.toLocaleString()} ${u}</div><p>${esc(s.focus)}</p>` + s.swim.blocks.map((b) => `
@@ -270,6 +290,7 @@ function sessionAction(s, t) {
   if (s.swim?.blocks.some((b) => b.name === 'CSS test')) return `<div class="row-btns"><button class="btn" data-act="openCss">Enter test times</button><button class="btn ghost" data-act="openSwimLog" data-planned="1">Log swim</button></div>`
   if (s.swim) return `<button class="btn" data-act="openSwimLog" data-planned="1">Log this swim</button>`
   if (s.type === 'hike_long') return `<button class="btn" data-act="openHikeLog" data-planned="1">Log hike</button>`
+  if (s.type === 'plan_conditioning') return `<button class="btn" data-act="openSessionLog">Log session</button>`
   return `<button class="btn" data-act="markDone">Mark done</button>`
 }
 
@@ -295,10 +316,11 @@ function viewLog() {
       <div class="h2">${esc(c.name)}</div>
       <div class="pr">PR ${pr} ${u}</div>
     </div>
-    ${c.prescription ? `<div class="badge-plan">Today's plan · ${esc(rxText(c.prescription))} · RPE ${c.prescription.rpe}</div>` : ''}
+    ${c.prescription ? `<div class="badge-plan">${c.optional ? 'Later option' : "Today's plan"} · ${esc(rxText(c.prescription))}${c.prescription.rir != null ? ` · ${c.prescription.rir}+ in reserve` : ` · RPE ${c.prescription.rpe}`}${c.prescription.rest ? ` · rest ${esc(c.prescription.rest)}` : ''}</div>` : ''}
+    ${c.alternative ? `<div class="hint"><b>Alternative:</b> ${esc(c.alternative)}</div>` : ''}
     ${c.suggestion?.reason ? `<div class="hint">${esc(c.suggestion.reason)}</div>` : ''}
     ${c.cues?.length ? `<div class="hint">${c.cues.map(esc).join(' · ')}</div>` : ''}
-    ${c.swaps?.length ? `<div class="swaps">${c.swaps.map((x) => `<button class="${x.exerciseId === c.exerciseId ? 'on chip' : ''}" data-act="swap" data-id="${x.exerciseId}">${x.exerciseId === c.exerciseId ? '✓ ' : 'Swap: '}${esc(x.name)}</button>`).join('')}</div>` : ''}
+    ${c.swaps?.length > 1 ? `<div class="swaps">${c.swaps.map((x) => `<button class="${x.exerciseId === c.exerciseId ? 'on chip' : ''}" data-act="swap" data-id="${x.exerciseId}">${x.exerciseId === c.exerciseId ? '✓ ' : 'Swap: '}${esc(x.name)}</button>`).join('')}</div>` : ''}
     <div class="log-photo">${photoOf(c.exerciseId) ? `<img src="${photoOf(c.exerciseId)}" alt="${esc(c.name)}">` : `<div class="ph">${ICON.photo.replace('<svg', '<svg width="26" height="26"')} Add a photo of this machine</div>`}
       <button class="photo-btn" data-act="pickPhoto" data-id="${c.exerciseId}">${userPhoto(c.exerciseId) ? 'Change photo' : 'Use my photo'}</button>
       ${userPhoto(c.exerciseId) ? `<button class="photo-btn" style="top:auto;bottom:10px" data-act="clearPhoto" data-id="${c.exerciseId}">Reset</button>` : bundledPhoto(c.exerciseId) ? `<div class="photo-credit">${esc(bundledPhoto(c.exerciseId).artist || 'Wikimedia Commons')} · ${esc(bundledPhoto(c.exerciseId).license)}</div>` : ''}</div>
@@ -310,18 +332,21 @@ function viewLog() {
         <button class="round" data-act="adj" data-k="weight" data-d="1" aria-label="More weight">+</button>
       </div>
       <div class="pair">
-        <div class="box"><div class="label-sm">${amountLabel(c.prescription)}</div><div class="stepper">
+        <div class="box"><div class="label-sm">${amountLabel(c.prescription)}${c.prescription?.perSide ? ' /side' : ''}</div><div class="stepper">
           <button class="small" data-act="adj" data-k="reps" data-d="-1">−</button><div class="v">${reps}</div><button class="small" data-act="adj" data-k="reps" data-d="1">+</button></div></div>
         <div class="box"><div class="label-sm">Sets</div><div class="stepper">
           <button class="small" data-act="adj" data-k="sets" data-d="-1">−</button><div class="v">${sets}</div><button class="small" data-act="adj" data-k="sets" data-d="1">+</button></div></div>
       </div>
+      ${S.entry.rir != null ? `<div class="box" style="margin-top:12px"><div class="label-sm">Reps in reserve (how many more you could do)</div><div class="stepper">
+          <button class="small" data-act="adj" data-k="rir" data-d="-1">−</button><div class="v">${S.entry.rir}</div><button class="small" data-act="adj" data-k="rir" data-d="1">+</button></div></div>` : ''}
       <button class="btn" data-act="saveSet" ${S.busy ? 'disabled' : ''}>${weight > pr && pr > 0 ? 'Save set · New PR' : 'Save set'}</button>
     </div>
     ${todays.length ? `<div style="margin-top:22px"><div class="label" style="color:var(--on-photo-3);padding:0 4px">Logged today</div>
-      <div class="stack" style="margin-top:10px">${todays.map((e) => `<div class="logged-row"><div class="w">${e.weight} ${u}</div><div class="s">${e.setCount} × ${e.reps ?? '—'}</div>${e.isPr ? '<div class="chip-pr">PR</div>' : ''}</div>`).join('')}</div></div>` : ''}`
+      <div class="stack" style="margin-top:10px">${todays.map((e) => `<div class="logged-row"><div class="w">${e.weight} ${u}</div><div class="s">${e.setCount} × ${e.reps ?? '—'}${e.sets?.[0]?.rir != null ? ` · ${e.sets[0].rir} RIR` : ''}</div>${e.isPr ? '<div class="chip-pr">PR</div>' : ''}</div>`).join('')}</div></div>` : ''}`
 }
 
 function dayDetail(s) {
+  if (s.type === 'plan_conditioning') return s.options.length ? s.options.map((o) => o.name.replace(/^Option [A-Z] \/ /, '')).join(' or ') : s.blocks.map((b) => b.name).join(' · ')
   if (isStrength(s.type)) {
     const ex = s.exercises
     const shown = ex.slice(0, 3).map((e) => `${e.name} ${rxText(e.prescription).replace(' × ', '×')}`)
@@ -343,9 +368,9 @@ function viewPlan() {
   const td = localDate()
   const prog = S.program.progress[sel - 1]
   let html = `
-    <div class="title-row" style="margin-top:8px"><div class="h1">Plan</div><div class="side">Swim · Hike · Lean</div></div>
+    <div class="title-row" style="margin-top:8px"><div class="h1">Plan</div><div class="side" style="white-space:normal;text-align:right;max-width:55%">${esc(S.program.imported ? S.program.name : 'Swim · Hike · Lean')}</div></div>
     <div class="weeks">${S.program.progress.map((p) => `<button class="wk${p.week === sel ? ' sel' : ''}${p.week === now ? ' now' : ''}" data-act="selWeek" data-w="${p.week}">W${p.week}</button>`).join('')}</div>
-    <div class="section"><div class="label">Week ${sel} of 12 · ${esc(prog.phase)}${prog.deload ? ' · deload' : ''}</div><div style="font-size:13px">${prog.completed}/${prog.sessions} workouts</div></div>`
+    <div class="section"><div class="label">Week ${sel} of ${S.program.weeks}${prog.phase ? ' · ' + esc(prog.phase) : ''}${prog.deload ? ' · deload' : ''}</div><div style="font-size:13px">${prog.completed}/${prog.sessions} workouts</div></div>`
   if (!w) return html + loadingHtml('week' + sel, 'Loading week…')
   if (w.note) html += `<div class="banner" style="margin:0 0 10px">${esc(w.note)}</div>`
   html += `<div class="stack">${w.days.map((d) => {
@@ -362,7 +387,9 @@ function viewPlan() {
       <div style="min-width:0"><div class="f">${esc(rest ? 'Rest' : d.session.title)}</div><div class="d">${esc(dayDetail(d.session))}</div></div>
       <div class="st" style="color:${col}">${st}</div></button>`
   }).join('')}</div>
-  <div class="note-box">Your PainCave 12-week plan · Base → Build → Peak · deloads in weeks 4 and 8<br>Built for the equipment at ${esc(S.profile.gyms.map((g) => (g === 'ymca' ? 'YMCA' : 'Planet Fitness')).join(' + '))}</div>`
+  ${S.program.imported
+    ? `<div class="note-box">Your plan: ${esc(S.program.name)}${S.program.fileName ? ` · from ${esc(S.program.fileName)}` : ''}${S.program.progression?.reps ? `<br><br><b>Adding reps or weight:</b> ${esc(S.program.progression.reps)}` : ''}${S.program.progression?.sets ? `<br><b>Sets:</b> ${esc(S.program.progression.sets)}` : ''}</div>`
+    : `<div class="note-box">Your PainCave 12-week plan · Base → Build → Peak · deloads in weeks 4 and 8<br>Built for the equipment at ${esc(S.profile.gyms.map((g) => (g === 'ymca' ? 'YMCA' : 'Planet Fitness')).join(' + '))}<br><button class="toggle" data-act="uploadPlan" style="margin-top:12px">Upload my own plan (PDF)</button></div>`}`
   return html
 }
 
@@ -381,7 +408,7 @@ function viewSwim() {
       <div class="card tile"><div class="label-sm">This week</div><div class="big">${st.thisWeek.distance.toLocaleString()}<small>${u}</small></div></div>
       <div class="card tile"><div class="label-sm">CSS pace</div><div class="big">${st.css ? esc(st.css.text) : '—'}<small>${st.css ? '/100' + esc(st.css.unit) : 'no test'}</small></div></div>
     </div>
-    <div class="row-btns" style="margin-top:12px"><button class="btn" data-act="openSwimLog">Log a swim</button><button class="btn ghost" data-act="openCss">CSS test</button></div>
+    <div class="row-btns" style="margin-top:12px"><button class="btn" data-act="openSwimLog">Log a swim</button>${planOn() ? '' : '<button class="btn ghost" data-act="openCss">CSS test</button>'}</div>
     <div class="card chart-card">
       <div class="label-sm">Last 12 weeks</div>
       <svg class="chart" viewBox="0 0 316 120" role="img" aria-label="Weekly swim distance"><line x1="0" y1="110" x2="316" y2="110" stroke="#ebeae4"></line>${bars}</svg>
@@ -548,12 +575,60 @@ function viewBodyLog() {
     </div>`
 }
 
+function viewSessionLog() {
+  const f = S.form
+  const s = S.today?.session
+  const opts = s?.options ?? []
+  const box = (k, label, d, val) => `<div class="box"><div class="label-sm">${label}</div><div class="stepper"><button class="small" data-act="formAdj" data-k="${k}" data-d="${-d}">−</button><div class="v" style="font-size:24px">${val}</div><button class="small" data-act="formAdj" data-k="${k}" data-d="${d}">+</button></div></div>`
+  return `
+    <div class="log-head"><button class="back" data-act="closeView" aria-label="Back">‹</button><div class="h2">${esc(s?.title ?? 'Log session')}</div></div>
+    <div class="card entry">
+      ${opts.length ? `<div class="label-sm">What did you do?</div><div class="seg" style="margin-top:8px">${opts.map((o, i) => `<button class="chip light${f.option === i ? ' on' : ''}" data-act="form" data-k="option" data-v="${i}">${esc(o.name.replace(/^Option [A-Z] \/ /, ''))}</button>`).join('')}</div>` : ''}
+      <div class="label-sm" style="margin-top:${opts.length ? 18 : 0}px">Total visit</div>
+      <div class="stepper-big"><button class="round" data-act="formAdj" data-k="totalMin" data-d="-5">−</button>
+        <div class="big-val"><div class="v">${f.totalMin}</div><div class="u">min</div></div><button class="round" data-act="formAdj" data-k="totalMin" data-d="5">+</button></div>
+      <div class="pair">${box('activeMin', 'Active time (min)', 1, f.activeMin)}${box('rpe', 'Effort (RPE 0–10)', 1, f.rpe)}</div>
+      <div class="field"><label class="label-sm" for="sessNotes">Notes (speed, incline, what you practised)</label><input class="input" id="sessNotes" data-bind="notes" value="${esc(f.notes)}" placeholder="2.5 mph, level"></div>
+      <button class="btn" data-act="saveSession" ${S.busy ? 'disabled' : ''}>Save session</button>
+    </div>`
+}
+
+function viewPlanReview() {
+  const p = S.importDraft
+  const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+  const sessionsHtml = p.schedule.map((d) => {
+    const s = d.session ? p.sessions[d.session] : null
+    let body = `<div class="muted" style="font-size:14px">${esc(d.focus)}</div>`
+    if (s?.kind === 'strength') body = `<div class="muted" style="font-size:13px;margin-bottom:6px">${esc(d.focus)}${d.budget ? ` · ${esc(d.budget)}` : ''}</div>` + s.exercises.map((e, i) => `<div style="display:flex;justify-content:space-between;gap:8px;font-size:14px;padding:3px 0;${i >= (s.firstVisitCount ?? 99) ? 'opacity:.6' : ''}"><span>${esc(e.name)}</span><span class="num muted" style="white-space:nowrap">${esc(e.doseText)}</span></div>`).join('')
+    else if (s) body = `<div class="muted" style="font-size:13px;margin-bottom:6px">${esc(d.focus)}${d.budget ? ` · ${esc(d.budget)}` : ''}</div>` + [...(s.options ?? []).map((o) => o.name), ...(s.blocks ?? []).map((b) => `${b.name}: ${b.start ?? b.dose ?? ''}`)].map((x) => `<div style="font-size:14px;padding:2px 0">${esc(x)}</div>`).join('')
+    return `<div class="list-row" style="align-items:flex-start;display:block"><div style="font-weight:700">${days[d.dayIndex]} · ${esc(s ? s.label : 'Recovery')}</div>${body}</div>`
+  }).join('')
+  const found = Object.values(p.sessions).reduce((a, s) => a + s.exercises.length, 0)
+  return `
+    <div class="log-head"><button class="back" data-act="cancelPlan" aria-label="Back">‹</button><div class="h2">Your plan</div></div>
+    <div class="glass session"><div class="t">${esc(p.name)}</div><p>${p.weeks} weeks · ${p.schedule.filter((d) => d.session).length} workout days · ${found} exercises${p.weekGuidance.length ? ` · ${p.weekGuidance.length} review stages` : ''}. Only the workouts were imported.</p></div>
+    <div class="card list" style="margin-top:12px">${sessionsHtml}</div>
+    <div class="card entry">
+      <div class="field"><label class="label-sm" for="planStart">Week 1 starts (the Monday of this date)</label><input class="input" type="date" id="planStart" data-bind="planStart" value="${esc(S.form.planStart)}"></div>
+      <div class="hint">Faded exercises are later options; first visits use the first ${Object.values(p.sessions).find((s) => s.firstVisitCount)?.firstVisitCount ?? 3}. Your logs, swims and stats are kept.</div>
+      <button class="btn" data-act="usePlan" ${S.busy ? 'disabled' : ''}>Use this plan</button>
+      <button class="btn light" style="margin-top:10px;background:var(--control)" data-act="cancelPlan">Cancel</button>
+    </div>`
+}
+
 function viewSettings(setup = false) {
   const f = S.form
   const chips = (k, opts) => `<div class="seg">${opts.map(([v, l]) => `<button class="chip light${String(f[k]) === String(v) ? ' on' : ''}" data-act="form" data-k="${k}" data-v="${v}">${l}</button>`).join('')}</div>`
   return `
     ${setup ? `<div class="eyebrow">The PainCave</div><div class="h1" style="margin-top:4px">Build your plan</div><div class="summary">Swim, hike and lose the belly in 12 weeks, using the machines your gym actually has.</div>`
       : `<div class="log-head"><button class="back" data-act="closeView" aria-label="Back">‹</button><div class="h2">Settings</div></div>`}
+    <div class="card entry">
+      <div class="label-sm">Workout plan</div>
+      ${S.profile?.customPlan
+        ? `<div style="font-size:17px;font-weight:600;margin-top:6px">${esc(S.profile.customPlan.name)}</div><div class="hint">Imported${S.profile.customPlan.fileName ? ` from ${esc(S.profile.customPlan.fileName)}` : ''}${S.profile.customPlan.importedAt ? ` on ${esc(fmtDate(S.profile.customPlan.importedAt.slice(0, 10)))}` : ''}.</div>
+           <div class="row-btns" style="margin-top:12px"><button class="btn" data-act="uploadPlan">Upload new PDF</button><button class="btn light" style="background:var(--control)" data-act="dropPlan">Use PainCave plan</button></div>`
+        : `<div class="hint">${setup ? 'Have a plan from a coach or clinician? Upload the PDF and PainCave will use its workouts.' : 'Using the PainCave plan built for your gyms.'}</div><button class="btn light" style="margin-top:12px;background:var(--control)" data-act="uploadPlan">Upload my plan (PDF)</button>`}
+    </div>
     <div class="card entry">
       <div class="field"><div class="label-sm">Your gyms</div>
         <label class="check"><input type="checkbox" data-bind="gym_pf" ${f.gym_pf ? 'checked' : ''}> Planet Fitness</label>
@@ -593,23 +668,25 @@ let lastKey = null
 function render() {
   const screen = $('#screen')
   const setup = !S.profile || S.profile.setup === false
-  const key = setup ? 'setup' : S.view ?? S.tab
+  const key = S.view === 'planreview' ? 'planreview' : setup ? 'setup' : S.view ?? S.tab
   if (lastKey) scrollPos[lastKey] = screen.scrollTop
   let html
-  if (setup) html = viewSettings(true)
+  if (S.view === 'planreview' && S.importDraft) html = viewPlanReview()
+  else if (setup) html = viewSettings(true)
   else if (S.view === 'log') html = viewLog()
   else if (S.view === 'swimlog') html = viewSwimLog()
   else if (S.view === 'csstest') html = viewCss()
   else if (S.view === 'hikelog') html = viewHikeLog()
   else if (S.view === 'bodylog') html = viewBodyLog()
   else if (S.view === 'settings') html = viewSettings(false)
+  else if (S.view === 'sessionlog') html = viewSessionLog()
   else html = { today: viewToday, plan: viewPlan, swim: viewSwim, stats: viewStats }[S.tab]()
   screen.innerHTML = html
   screen.scrollTop = key === lastKey ? (scrollPos[key] ?? 0) : S.view ? 0 : (scrollPos[key] ?? 0)
   lastKey = key
 
   const tb = $('#tabbar')
-  tb.hidden = setup
+  tb.hidden = setup || S.view === 'planreview'
   const active = S.view === 'log' || S.view === 'settings' ? 'today' : S.view === 'swimlog' || S.view === 'csstest' ? 'swim' : S.view === 'bodylog' || S.view === 'hikelog' ? 'stats' : S.tab
   tb.innerHTML = `<div class="tabs">${[['today', 'Today'], ['plan', 'Plan'], ['swim', 'Swim'], ['stats', 'Stats']].map(([k, l]) => `<button class="tab${active === k ? ' on' : ''}" data-act="tab" data-tab="${k}">${l}</button>`).join('')}</div>`
 }
@@ -635,10 +712,12 @@ async function openLog(c) {
   try { S.entries = await api('GET', `/api/exercises/${c.exerciseId}/entries`) } catch (e) { toast(e.message, true) }
   const last = S.entries.at(-1)
   const p = c.prescription
+  const planEx = c.type === 'plan_strength'
   S.entry = {
     weight: c.suggestion?.weight ?? last?.weight ?? 0,
-    reps: p ? (p.reps?.[1] ?? p.seconds ?? p.steps) : (last?.reps ?? 10),
-    sets: p?.sets ?? last?.setCount ?? 3,
+    reps: c.suggestion?.reps ?? (planEx ? (last?.reps ?? p?.reps?.[0] ?? 8) : p ? (p.reps?.[1] ?? p.seconds ?? p.steps) : (last?.reps ?? 10)),
+    sets: planEx ? (c.suggestion?.sets ?? last?.setCount ?? 1) : (p?.sets ?? last?.setCount ?? 3),
+    rir: planEx || planOn() ? (last?.sets?.[0]?.rir ?? 4) : null,
   }
   render()
 }
@@ -695,23 +774,69 @@ const actions = {
     } catch (e) { toast(e.message, true) }
   },
   restore() { $('#restoreInput').click() },
+  uploadPlan() { $('#planInput').click() },
+  cancelPlan() { S.importDraft = null; S.view = S.profile?.setup === false ? null : 'settings'; render() },
+  async usePlan() {
+    const d = S.importDraft
+    S.busy = true; render()
+    try {
+      if (S.profile?.setup === false) {
+        if (!S.form.gym_pf && !S.form.gym_ymca) S.form = { ...settingsForm(), ...S.form }
+        await actions.saveSettings({ customPlan: d, startDate: S.form.planStart })
+      } else {
+        S.profile = await api('PUT', '/api/profile', { customPlan: d, startDate: S.form.planStart })
+        Object.assign(S, { view: null, tab: 'today', program: null, weekCache: {}, weekSel: null, lifts: null })
+        await loadToday()
+      }
+      S.importDraft = null
+      toast('Plan loaded')
+    } catch (e) { toast(e.message, true) }
+    S.busy = false; render()
+  },
+  async dropPlan() {
+    if (!confirm('Switch back to the PainCave plan? Your logs are kept.')) return
+    try {
+      S.profile = await api('PUT', '/api/profile', { customPlan: null })
+      Object.assign(S, { view: null, tab: 'today', program: null, weekCache: {}, weekSel: null })
+      await loadToday(); toast('Using the PainCave plan')
+    } catch (e) { toast(e.message, true) }
+    render()
+  },
+  openSessionLog() {
+    S.form = { option: S.today?.session?.options?.length ? 0 : null, totalMin: 30, activeMin: 10, rpe: 2, notes: '' }
+    S.view = 'sessionlog'; render()
+  },
+  async saveSession() {
+    const t = S.today, f = S.form
+    S.busy = true; render()
+    try {
+      const opt = f.option != null ? t.session.options[f.option]?.name : null
+      await api('POST', '/api/workouts', { date: localDate(), sessionKey: t.sessionKey, type: t.session.type, durationMin: f.totalMin, activeMin: f.activeMin, rpe: f.rpe, option: opt, notes: f.notes, exercises: [] })
+      await loadToday()
+      S.view = null; S.tab = 'today'
+      toast('Session saved')
+    } catch (e) { toast(e.message, true) }
+    S.busy = false; render()
+  },
   adj({ k, d }) {
     const e = S.entry
     const dir = Number(d)
     if (k === 'weight') e.weight = Math.max(0, round1(e.weight + dir * step()))
     if (k === 'reps') e.reps = Math.max(1, e.reps + dir * amountStep(S.current.prescription))
     if (k === 'sets') e.sets = Math.max(1, e.sets + dir)
+    if (k === 'rir') e.rir = Math.min(10, Math.max(0, e.rir + dir))
     render()
   },
   async saveSet() {
     const c = S.current, e = S.entry
     const one = c.prescription?.unit === 'seconds' ? { seconds: e.reps, weight: e.weight || null } : { reps: e.reps, weight: e.weight }
+    if (e.rir != null) one.rir = e.rir
     const wasPr = e.weight > Math.max(0, ...S.entries.map((x) => x.weight)) && S.entries.length > 0
     S.busy = true; render()
     try {
       await api('POST', '/api/workouts', {
         date: localDate(), sessionKey: c.sessionKey, type: c.type, gymId: c.gymId,
-        exercises: [{ exerciseId: c.exerciseId, slot: c.slot, sets: Array.from({ length: e.sets }, () => ({ ...one })) }],
+        exercises: [{ exerciseId: c.exerciseId, slot: c.slot, name: c.name, sets: Array.from({ length: e.sets }, () => ({ ...one })) }],
       })
       S.entries = await api('GET', `/api/exercises/${c.exerciseId}/entries`)
       toast(wasPr ? 'New PR. Saved.' : 'Set saved')
@@ -753,10 +878,10 @@ const actions = {
     S.form = { weight: b?.weight.latest?.value ?? S.profile.weightLb ?? 180, waist: b?.waist.latest?.value ?? 36 }
     S.view = 'bodylog'; render()
   },
-  form({ k, v }) { S.form[k] = ['daysPerWeek', 'weightStep', 'rpe'].includes(k) ? Number(v) : v; render() },
+  form({ k, v }) { S.form[k] = ['daysPerWeek', 'weightStep', 'rpe', 'option'].includes(k) ? Number(v) : v; render() },
   formAdj({ k, d }) {
     const f = S.form
-    const lim = { distance: [0, 20000], min: [0, 300], sec: [0, 55], spl: [0, 80], minutes: [0, 900], miles: [0, 60], elev: [0, 20000], pack: [0, 80], weight: [50, 600], waist: [20, 70] }[k]
+    const lim = { distance: [0, 20000], min: [0, 300], sec: [0, 55], spl: [0, 80], minutes: [0, 900], miles: [0, 60], elev: [0, 20000], pack: [0, 80], weight: [50, 600], waist: [20, 70], totalMin: [0, 240], activeMin: [0, 240], rpe: [0, 10] }[k]
     f[k] = Math.min(lim[1], Math.max(lim[0], round1(Number(f[k]) + Number(d))))
     if (k === 'waist') f[k] = Math.round(f[k] * 100) / 100
     render()
@@ -810,7 +935,8 @@ const actions = {
     } catch (e) { toast(e.message, true) }
     S.busy = false; render()
   },
-  async saveSettings() {
+  async saveSettings(extra = {}) {
+    if (!extra || extra.act) extra = {} // called from a button: the first argument is its dataset
     const f = S.form
     if (f.token !== undefined && f.token !== (local.get('token') ?? '')) { f.token ? local.set('token', f.token.trim()) : local.del('token'); S.needToken = false }
     const gyms = [f.gym_pf && 'planet-fitness', f.gym_ymca && 'ymca'].filter(Boolean)
@@ -820,6 +946,7 @@ const actions = {
       gyms, daysPerWeek: f.daysPerWeek, startDate: f.startDate, units: f.units, weightStep: f.weightStep,
       poolLength: Number(f.pool.replace(/\D/g, '')), poolUnit: f.pool.endsWith('yd') ? 'yd' : 'm', reportUnit: f.pool.endsWith('yd') ? 'yd' : 'm',
       sex: f.sex || undefined, age: num(f.age), heightIn: num(f.heightIn), weightLb: num(f.weightLb), goalWeightLb: num(f.goalWeightLb),
+      ...extra,
     }
     S.busy = true; render()
     try {
@@ -849,6 +976,35 @@ document.addEventListener('input', (e) => {
   }
 })
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.view && S.profile?.setup !== false) actions.closeView() })
+
+// Plan upload: read the PDF on the device with pdf.js, then pick out the workouts (core/plan-import.mjs).
+async function pdfTextItems(file) {
+  const pdfjs = await import('./vendor/pdfjs/pdf.min.mjs')
+  pdfjs.GlobalWorkerOptions.workerSrc = new URL('./vendor/pdfjs/pdf.worker.min.mjs', location.href).href
+  const doc = await pdfjs.getDocument({ data: new Uint8Array(await file.arrayBuffer()), isEvalSupported: false }).promise
+  const items = []
+  for (let p = 1; p <= doc.numPages; p++) {
+    const tc = await (await doc.getPage(p)).getTextContent()
+    for (const it of tc.items) if (it.str?.trim()) items.push({ page: p, x: it.transform[4], y: it.transform[5], h: it.height, str: it.str })
+  }
+  return items
+}
+$('#planInput').addEventListener('change', async (e) => {
+  const f = e.target.files?.[0]
+  e.target.value = ''
+  if (!f) return
+  toast('Reading your plan…')
+  try {
+    const [{ importPlan }, items] = await Promise.all([import('./core/plan-import.mjs'), pdfTextItems(f)])
+    S.importDraft = importPlan(items, { fileName: f.name })
+    const start = S.profile?.setup === false || !S.profile?.startDate ? localDate() : S.profile.startDate
+    S.form = { ...(S.profile?.setup === false ? S.form : {}), planStart: start }
+    S.view = 'planreview'
+  } catch (err) {
+    toast(/password/i.test(err.message) ? 'That PDF is password-protected' : err.message || 'Could not read that PDF', true)
+  }
+  render()
+})
 
 $('#restoreInput').addEventListener('change', async (e) => {
   const f = e.target.files?.[0]

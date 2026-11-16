@@ -232,8 +232,89 @@ export function buildSession(type, week, profile, ctx = {}) {
   throw new Error(`Unknown session type: ${type}`)
 }
 
+// ── Imported plans (see plan-import.mjs) ──────────────────────────────────────────────────────────────
+// When profile.customPlan is set, it replaces the generated program: same days, dates and session keys, but each
+// session comes from the uploaded document.
+
+export const weeksOf = (profile) => (profile.customPlan ? profile.customPlan.weeks : PROGRAM_WEEKS)
+
+/**
+ * The plan's own progression rule, applied to the log: add one rep at a time; after two visits with every set at the
+ * top of the range (and 3+ reps in reserve when recorded), use the smallest weight step and go back to the low end.
+ */
+export function planSuggestion(exerciseId, rx, history = [], { step = 5, firstVisit = null } = {}) {
+  const visits = history
+    .filter((w) => w.exercises?.some((e) => e.exerciseId === exerciseId))
+    .sort((a, b) => b.date.localeCompare(a.date) || (b.createdAt ?? '').localeCompare(a.createdAt ?? ''))
+    .map((w) => ({ date: w.date, sets: w.exercises.filter((e) => e.exerciseId === exerciseId).flatMap((e) => e.sets) }))
+  if (!visits.length) {
+    return { weight: null, reps: rx.reps ? Math.min(8, rx.reps[1]) : null, sets: 1, reason: firstVisit ? `First visit: ${firstVisit}` : 'First visit: 1 easy set, at least 4 reps left in the tank.' }
+  }
+  const [last, prev] = visits
+  const top = (v) => Math.max(0, ...v.sets.map((x) => x.weight ?? 0))
+  const w = top(last)
+  const lastSets = last.sets.filter((x) => (x.weight ?? 0) === w)
+  const minReps = Math.min(...lastSets.map((x) => x.reps ?? 0))
+  const easy = (v) => v.sets.every((x) => x.rir == null || x.rir >= 3)
+  const atTop = (v) => rx.reps && v.sets.filter((x) => (x.weight ?? 0) === top(v)).every((x) => (x.reps ?? 0) >= rx.reps[1])
+  const base = { lastDate: last.date, lastSets: last.sets }
+  if (!rx.reps) return { ...base, weight: w || null, reps: null, reason: 'Repeat last time. Change only one thing at a time.' }
+  if (prev && top(prev) === w && atTop(last) && atTop(prev) && easy(last) && easy(prev) && w > 0) {
+    return { ...base, weight: w + step, reps: rx.reps[0], reason: `Two easy visits at the top of the range: try the smallest weight step (${w + step}) and go back to ${rx.reps[0]} reps. If the machine jump is too big, keep ${w}.` }
+  }
+  if (minReps < rx.reps[1] && easy(last)) {
+    return { ...base, weight: w || null, reps: minReps + 1, reason: 'Same weight. Add 1 rep to a set if you still keep 3–4 reps in reserve.' }
+  }
+  if (!easy(last)) return { ...base, weight: w || null, reps: minReps, reason: 'Last time felt harder (under 3 in reserve). Repeat it, or go lighter.' }
+  return { ...base, weight: w || null, reps: rx.reps[1], reason: 'At the top of the range. One more easy visit here before adding weight.' }
+}
+
+function planSession(entry, plan, week, ctx) {
+  const guide = plan.weekGuidance?.find((g) => week >= g.from && week <= g.to) ?? null
+  if (!entry.session) {
+    return { type: 'rest', title: 'Recovery', focus: entry.focus, plan: [entry.focus, entry.budget].filter(Boolean).join('. '), phase: guide?.name ?? null, deload: false, imported: true }
+  }
+  const s = plan.sessions[entry.session]
+  const base = { title: s.label, focus: entry.focus, subtitle: s.title, budget: entry.budget, phase: guide?.name ?? null, deload: false, imported: true, notes: s.notes ?? [] }
+  if (s.kind === 'strength') {
+    const r = plan.strengthRoutine ?? {}
+    return {
+      ...base, type: 'plan_strength', gymName: null,
+      warmup: [r.warmup && `Warm up: ${r.warmup}`, r.effort && `Effort: ${r.effort}`, r.rest && `Rest: ${r.rest}`, r.cooldown && `Cool down: ${r.cooldown}`].filter(Boolean),
+      firstVisit: s.firstVisit ?? null, howTo: s.howTo ?? null,
+      exercises: s.exercises.map((e, i) => {
+        const d = e.dose ?? {}
+        const rx = { sets: d.sets?.[1] ?? 1, setsRange: d.sets ?? null, reps: d.reps ?? null, seconds: d.seconds?.[1] ?? null, unit: d.unit === 'seconds' ? 'seconds' : 'reps', perSide: !!d.perSide, text: e.doseText, rest: e.rest, rir: 4 }
+        const ex = EXERCISES[e.exerciseId]
+        return {
+          slot: 'p' + i, role: i < (s.firstVisitCount ?? Infinity) ? 'main' : 'later', optional: i >= (s.firstVisitCount ?? Infinity),
+          exerciseId: e.exerciseId, name: e.name, muscles: ex?.muscles ?? [], cues: [e.cue].filter(Boolean), alternative: e.alternative ?? null,
+          prescription: rx, swaps: [],
+          suggestion: planSuggestion(e.exerciseId, rx, ctx.history ?? [], { step: ctx.weightStep ?? 5, firstVisit: s.firstVisitDose ? '1 set × 8, at least 4 reps in reserve' : null }),
+        }
+      }),
+      finisher: null,
+    }
+  }
+  return {
+    ...base, type: 'plan_conditioning', options: s.options ?? [], blocks: s.blocks ?? [],
+    progressionNote: plan.progression?.conditioning ?? null,
+  }
+}
+
 export function weekPlan(week, profile, ctx = {}) {
-  if (!(week >= 1 && week <= PROGRAM_WEEKS)) throw Object.assign(new Error(`week must be 1-${PROGRAM_WEEKS}`), { status: 400 })
+  const plan = profile.customPlan
+  const total = weeksOf(profile)
+  if (!(week >= 1 && week <= total)) throw Object.assign(new Error(`week must be 1-${total}`), { status: 400 })
+  if (plan) {
+    const monday = mondayOnOrBefore(profile.startDate)
+    const guide = plan.weekGuidance?.find((g) => week >= g.from && week <= g.to) ?? null
+    const days = WEEKDAYS.map((weekday, i) => {
+      const entry = plan.schedule.find((d) => d.dayIndex === i) ?? { dayIndex: i, focus: 'Rest' }
+      return { sessionKey: `w${week}d${i}`, week, dayIndex: i, weekday, date: addDays(monday, (week - 1) * 7 + i), session: planSession(entry, plan, week, ctx) }
+    })
+    return { week, phase: guide?.name ?? null, deload: false, note: guide ? `Weeks ${guide.from}–${guide.to} · ${guide.name}: ${guide.guidance}` : null, days }
+  }
   const schedule = SCHEDULES[profile.daysPerWeek] ?? SCHEDULES[5]
   const monday = mondayOnOrBefore(profile.startDate)
   const days = WEEKDAYS.map((weekday, i) => {
@@ -248,6 +329,18 @@ export function weekPlan(week, profile, ctx = {}) {
 }
 
 export function programOverview(profile) {
+  const plan = profile.customPlan
+  if (plan) {
+    return {
+      name: plan.name, imported: true, fileName: plan.fileName ?? null, importedAt: plan.importedAt ?? null,
+      weeks: plan.weeks, startDate: mondayOnOrBefore(profile.startDate).toISOString().slice(0, 10),
+      daysPerWeek: plan.schedule.filter((d) => d.session).length,
+      phases: (plan.weekGuidance ?? []).map((g) => ({ name: g.name, weeks: Array.from({ length: g.to - g.from + 1 }, (_, k) => g.from + k), goal: g.guidance })),
+      deloadWeeks: [],
+      progression: plan.progression ?? null,
+      weeklyTemplate: WEEKDAYS.map((d, i) => { const e = plan.schedule.find((x) => x.dayIndex === i); return { weekday: d, type: e?.session ? plan.sessions[e.session].kind : 'rest', title: e?.session ? plan.sessions[e.session].label : 'Recovery' } }),
+    }
+  }
   const schedule = SCHEDULES[profile.daysPerWeek] ?? SCHEDULES[5]
   return {
     name: 'PainCave Swim + Hike + Lean',
@@ -270,6 +363,6 @@ export function locate(profile, dateStr) {
   const diff = Math.floor((new Date(dateStr + 'T00:00:00Z') - monday) / 86400000)
   if (diff < 0) return { status: 'not_started', startsOn: monday.toISOString().slice(0, 10) }
   const week = Math.floor(diff / 7) + 1
-  if (week > PROGRAM_WEEKS) return { status: 'complete', week }
+  if (week > weeksOf(profile)) return { status: 'complete', week }
   return { status: 'active', week, dayIndex: diff % 7 }
 }
