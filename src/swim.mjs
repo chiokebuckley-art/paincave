@@ -213,7 +213,7 @@ export function swimSession(kind, week, { poolLength = 25, poolUnit = 'yd', cssP
       blocks.push({ name: 'Warm-up', sets: [{ reps: 1, distance: P(300), stroke: 'mixed', effort: 'easy' }] })
       blocks.push({
         name: 'CSS test',
-        note: 'Swim the 400 all-out but even, rest 5-10 minutes easy, then swim the 200 all-out. Log both times with POST /api/swims/css-test.',
+        note: 'Swim the 400 all-out but even, rest 5-10 minutes easy, then swim the 200 all-out. Enter both times as a CSS test.',
         sets: [
           { reps: 1, distance: P(400), stroke: 'freestyle', effort: 'time trial' },
           { reps: 1, distance: P(200), stroke: 'freestyle', effort: 'time trial', restBefore: '5-10 min easy' },

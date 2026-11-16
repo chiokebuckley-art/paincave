@@ -1,6 +1,6 @@
-# PainCave — backend
+# The PainCave
 
-Training backend for **PainCave**, a workout app for swimming, hiking and losing the belly. The workouts use the equipment that **Planet Fitness** and **YMCA** gyms actually have.
+Workout app and training backend for **PainCave**, a workout app for swimming, hiking and losing the belly. The workouts use the equipment that **Planet Fitness** and **YMCA** gyms actually have.
 
 - 12-week program (Base → Build → Peak) generated from your gyms, days per week and pool.
 - Each lift is matched to your gym's equipment, with swaps (Smith machine at Planet Fitness, barbell at the Y, and so on).
@@ -26,7 +26,19 @@ npm test
 | `CORS_ORIGIN` | `*` | origin of the front end |
 | `PAINCAVE_PUBLIC` | `./public` | built front end to serve (SPA fallback to `index.html`) |
 
-When the Claude Design UI arrives, put its build in `paincave/public/` (or point it at this API with CORS).
+Open http://localhost:5190 on your phone (same Wi-Fi: use your computer's IP) and use **Add to Home Screen** to get a full-screen app.
+
+## The app (`public/`)
+
+Built from the Claude Design handoff (`docs/design/`). It uses plain HTML, CSS and JS, with no build step.
+
+- **Today:** today's session from the 12-week plan. On lifting days you see the machine grid ("Plan: 3 × 10–12", last weight and the suggested next weight, a Done pill) plus the warm-up and finisher. On swim, hike and cardio days you see the full workout and a log button. First run opens setup: gyms, days per week, pool and body stats.
+- **Log:** weight, reps and sets steppers, Save set, a New PR label, today's sets, swap chips (the backup exercises for that slot) and a photo for each machine.
+- **Plan:** W1–W12 chips and a 7-day list for each week, with each day marked Done, Missed or Today.
+- **Swim:** this week's distance, CSS pace, a 12-week chart, best pace, longest swim, milestones and recent swims. *Log a swim* takes pool, distance, time, strokes per length (for SWOLF), type and effort. *CSS test* takes your 400 and 200 times.
+- **Stats:** streak, weekly volume, a per-lift chart and PRs, Belly check (waist, weight, waist-to-height), Fuel (calories and protein) and hikes.
+
+Machine photos and the access token are stored on the phone itself (localStorage). Everything else is stored by the API.
 
 ## API
 

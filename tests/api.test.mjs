@@ -76,7 +76,20 @@ test('program needs a profile, then works end to end', async () => {
   assert.equal(next.exercises[0].suggestion.weight, 100)
   const hist = (await api('GET', `/api/exercises/${squat.exerciseId}/history`)).body
   assert.equal(hist[0].topWeight, 95)
+  // One lift logged: the day is not done yet
+  assert.equal((await api('GET', '/api/program/weeks/1')).body.days[0].completed, false)
+  for (const e of lower.exercises.slice(1)) {
+    await api('POST', '/api/workouts', { date: today, sessionKey: 'w1d0', type: 'lower', exercises: [{ exerciseId: e.exerciseId, slot: e.slot, sets: [{ reps: 10, weight: 20 }] }] })
+  }
   assert.equal((await api('GET', '/api/program/weeks/1')).body.days[0].completed, true)
+
+  const lifts = (await api('GET', '/api/stats/lifts')).body
+  assert.equal(lifts.streakWeeks, 1)
+  assert.equal(lifts.lifts.find((l) => l.exerciseId === squat.exerciseId).pr, 95)
+  assert.ok(lifts.weekVolume >= 95 * 36)
+  const entries = (await api('GET', `/api/exercises/${squat.exerciseId}/entries`)).body
+  assert.equal(entries[0].isPr, true)
+  assert.equal(entries[0].setCount, 3)
 })
 
 test('swim tracking: log, edit, stats, CSS', async () => {
@@ -135,4 +148,23 @@ test('hikes, body, nutrition, dashboard, export', async () => {
 test('unknown routes and methods', async () => {
   assert.equal((await api('GET', '/api/nope')).status, 404)
   assert.equal((await api('PATCH', '/api/swims')).status, 405)
+})
+
+test('serves the app shell and falls back to it for unknown pages', async () => {
+  const { createServer } = await import('node:http')
+  const { fileURLToPath } = await import('node:url')
+  const publicDir = fileURLToPath(new URL('../public', import.meta.url))
+  const srv = createServer(createApp({ store: new Store(null), publicDir }))
+  await new Promise((r) => srv.listen(0, r))
+  const at = `http://127.0.0.1:${srv.address().port}`
+  try {
+    const home = await fetch(at + '/')
+    assert.equal(home.status, 200)
+    assert.match(await home.text(), /The PainCave/)
+    assert.match((await fetch(at + '/app.js')).headers.get('content-type'), /javascript/)
+    assert.match(await (await fetch(at + '/plan')).text(), /The PainCave/)
+    assert.equal((await fetch(at + '/api/nope')).status, 404)
+  } finally {
+    srv.close()
+  }
 })

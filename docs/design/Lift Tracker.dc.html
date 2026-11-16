@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<script src="./image-slot.js"></script>
+<style>body{margin:0;background:#120d0b;font-family:-apple-system,"SF Pro",system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#2f6fdd}a:hover{color:#1f55b8}button{font-family:inherit;cursor:pointer}#cave-bg::part(empty),#cave-bg::part(ring){opacity:0}@keyframes popIn{from{transform:scale(.96);opacity:0}to{transform:scale(1);opacity:1}}</style>
+</helmet>
+<div style="min-height:100vh;display:flex;align-items:center;justify-content:center;padding:32px 16px;box-sizing:border-box">
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="402px,874px">
+<div style="height:100%;display:flex;flex-direction:column;background:#0e0b0a;color:#f5f1ea;position:relative">
+<div style="position:absolute;inset:0;background:radial-gradient(120% 70% at 50% 0%,#3a2a24 0%,#1a1210 55%,#0a0807 100%)"></div>
+<div style="position:absolute;inset:0"><image-slot id="cave-bg" shape="rect" placeholder="Drop a cave photo" src="https://commons.wikimedia.org/wiki/Special:FilePath/Thors_cave,_view_from_inside.jpg?width=960" credit="Iankelsall1 · Wikimedia Commons" credit-href="https://commons.wikimedia.org/wiki/File:Thors_cave,_view_from_inside.jpg"></image-slot></div>
+<div style="position:absolute;inset:0;pointer-events:none;background:linear-gradient(180deg,rgba(10,8,7,.45) 0%,rgba(10,8,7,0) 22%,rgba(10,8,7,0) 75%,rgba(10,8,7,.35) 100%)"></div>
+
+<!-- HOME: pick equipment -->
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div style="flex:1;overflow:auto;position:relative;padding:68px 20px 110px;box-sizing:border-box">
+  <div style="font-size:12px;font-weight:800;letter-spacing:2.4px;text-transform:uppercase;color:#ff5a3c">The PainCave</div>
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:4px">
+    <div style="font-size:34px;font-weight:700;letter-spacing:-.5px">{{ dayTitle }}</div>
+    <div style="font-size:15px;color:rgba(245,241,234,.8)">{{ todayLabel }}</div>
+  </div>
+  <div style="margin-top:6px;font-size:15px;color:rgba(245,241,234,.8)">{{ todaySummary }}</div>
+  <sc-if value="{{ isRestDay }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:22px;background:rgba(20,15,13,.62);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-radius:22px;padding:20px;display:flex;flex-direction:column;gap:6px">
+      <div style="font-size:20px;font-weight:700">Rest day</div>
+      <div style="font-size:15px;color:rgba(245,241,234,.8)">Nothing planned. Recover — or log something extra below.</div>
+    </div>
+  </sc-if>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px">
+    <sc-for list="{{ homeItems }}" as="m" hint-placeholder-count="2">
+      <button onClick="{{ m.open }}" style="appearance:none;border:0;padding:0;background:#fff;color:#17170f;border-radius:22px;overflow:hidden;text-align:left;box-shadow:0 1px 2px rgba(0,0,0,.05),0 6px 18px rgba(0,0,0,.05);display:flex;flex-direction:column" style-active="transform:scale(.97)">
+        <div style="width:100%;aspect-ratio:1/1;position:relative;background:#e9e8e2">
+          <image-slot id="{{ m.id }}" shape="rect" placeholder="{{ m.name }} photo"></image-slot>
+        </div>
+        <div style="padding:12px 14px 14px;display:flex;flex-direction:column;gap:3px;width:100%;box-sizing:border-box">
+          <div style="display:flex;align-items:center;gap:6px"><div style="font-size:16px;font-weight:600">{{ m.name }}</div><sc-if value="{{ m.done }}" hint-placeholder-val="{{ false }}"><div style="margin-left:auto;font-size:11px;font-weight:700;color:#fff;background:#2a9d5c;padding:2px 7px;border-radius:7px">Done</div></sc-if></div>
+          <sc-if value="{{ m.hasTarget }}" hint-placeholder-val="{{ false }}"><div style="font-size:13px;font-weight:600;color:#2f6fdd">{{ m.target }}</div></sc-if>
+          <div style="font-size:13px;color:#6f6e66">{{ m.lastLabel }}</div>
+        </div>
+      </button>
+    </sc-for>
+  </div>
+  <sc-if value="{{ canToggleAll }}" hint-placeholder-val="{{ true }}">
+    <button onClick="{{ toggleAll }}" style="appearance:none;border:0;background:rgba(20,15,13,.55);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#f5f1ea;margin:18px auto 0;display:block;height:44px;padding:0 20px;border-radius:22px;font-size:14px;font-weight:600">{{ toggleAllLabel }}</button>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- PLAN -->
+<sc-if value="{{ isPlan }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;overflow:auto;position:relative;padding:68px 20px 110px;box-sizing:border-box">
+  <div style="display:flex;align-items:baseline;justify-content:space-between;margin-top:8px">
+    <div style="font-size:34px;font-weight:700;letter-spacing:-.5px">Plan</div>
+    <div style="font-size:15px;color:rgba(245,241,234,.8)">{{ planName }}</div>
+  </div>
+  <div style="display:flex;gap:6px;overflow-x:auto;margin:16px -20px 0;padding:0 20px 4px">
+    <sc-for list="{{ weekChips }}" as="w" hint-placeholder-count="12">
+      <button onClick="{{ w.select }}" style="appearance:none;border:0;flex:none;min-width:44px;height:44px;padding:0 10px;border-radius:22px;font-size:14px;font-weight:600;background:{{ w.bg }};color:{{ w.fg }};box-shadow:{{ w.ring }}">{{ w.label }}</button>
+    </sc-for>
+  </div>
+  <div style="display:flex;justify-content:space-between;align-items:baseline;margin:18px 4px 10px">
+    <div style="font-size:13px;font-weight:600;color:rgba(245,241,234,.8);text-transform:uppercase;letter-spacing:.6px">Week {{ planWeek }} of {{ planWeeks }}</div>
+    <div style="font-size:13px;color:rgba(245,241,234,.8)">{{ weekProgress }}</div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:8px">
+    <sc-for list="{{ weekDays }}" as="d" hint-placeholder-count="7">
+      <div style="background:{{ d.bg }};color:{{ d.fg }};border-radius:18px;padding:14px 16px;display:grid;grid-template-columns:44px 1fr auto;gap:12px;align-items:center;box-shadow:{{ d.ring }}">
+        <div style="display:flex;flex-direction:column;align-items:center;line-height:1.1">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.6px;opacity:.65">{{ d.dow }}</div>
+          <div style="font-size:20px;font-weight:700">{{ d.dom }}</div>
+        </div>
+        <div style="min-width:0">
+          <div style="font-size:16px;font-weight:600">{{ d.focus }}</div>
+          <div style="font-size:13px;opacity:.7;margin-top:2px;text-wrap:pretty">{{ d.detail }}</div>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:{{ d.statusColor }}">{{ d.status }}</div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="margin-top:18px;border:1.5px dashed rgba(245,241,234,.4);border-radius:18px;padding:16px;text-align:center;font-size:14px;color:rgba(245,241,234,.85);background:rgba(20,15,13,.45)">Sample 12-week plan · your uploaded plan will replace it</div>
+</div>
+</sc-if>
+
+<!-- LOG: enter a set -->
+<sc-if value="{{ isLog }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;overflow:auto;position:relative;padding:68px 20px 110px;box-sizing:border-box;display:flex;flex-direction:column">
+  <div style="display:flex;align-items:center;gap:10px;margin-top:4px">
+    <button onClick="{{ goHome }}" style="appearance:none;border:0;background:#fff;width:40px;height:40px;border-radius:20px;font-size:20px;color:#17170f;display:flex;align-items:center;justify-content:center;box-shadow:0 1px 2px rgba(0,0,0,.06)">‹</button>
+    <div style="font-size:22px;font-weight:700;letter-spacing:-.3px">{{ current.name }}</div>
+    <div style="margin-left:auto;font-size:13px;color:rgba(245,241,234,.85)">PR {{ current.pr }} {{ unit }}</div>
+  </div>
+  <sc-if value="{{ current.hasTarget }}" hint-placeholder-val="{{ false }}">
+    <div style="margin-top:10px;align-self:flex-start;font-size:13px;font-weight:600;color:#fff;background:rgba(47,111,221,.9);padding:5px 10px;border-radius:10px">Today's plan · {{ current.target }}</div>
+  </sc-if>
+  <div style="display:none">
+  </div>
+  <div style="margin-top:18px;height:120px;border-radius:20px;overflow:hidden;background:#e9e8e2;color:#17170f;position:relative">
+    <image-slot id="{{ current.id }}-log" shape="rect" placeholder="{{ current.name }} photo"></image-slot>
+  </div>
+
+  <div style="margin-top:18px;background:#fff;color:#17170f;border-radius:24px;padding:20px;box-shadow:0 1px 2px rgba(0,0,0,.05),0 6px 18px rgba(0,0,0,.05)">
+    <div style="font-size:13px;font-weight:600;color:#6f6e66;text-transform:uppercase;letter-spacing:.6px">Weight</div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-top:8px">
+      <button onClick="{{ decWeight }}" style="appearance:none;border:0;background:#f0efea;width:56px;height:56px;border-radius:28px;font-size:28px;color:#17170f" style-active="background:#e2e1da">−</button>
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <div style="font-size:64px;font-weight:700;letter-spacing:-2px;line-height:1;font-variant-numeric:tabular-nums">{{ weight }}</div>
+        <div style="font-size:18px;color:#6f6e66;font-weight:500">{{ unit }}</div>
+      </div>
+      <button onClick="{{ incWeight }}" style="appearance:none;border:0;background:#f0efea;width:56px;height:56px;border-radius:28px;font-size:28px;color:#17170f" style-active="background:#e2e1da">+</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:20px">
+      <div style="background:#f7f6f2;border-radius:16px;padding:12px 14px">
+        <div style="font-size:12px;font-weight:600;color:#6f6e66;text-transform:uppercase;letter-spacing:.6px">Reps</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+          <button onClick="{{ decReps }}" style="appearance:none;border:0;background:#fff;width:36px;height:36px;border-radius:18px;font-size:20px">−</button>
+          <div style="font-size:28px;font-weight:700;font-variant-numeric:tabular-nums">{{ reps }}</div>
+          <button onClick="{{ incReps }}" style="appearance:none;border:0;background:#fff;width:36px;height:36px;border-radius:18px;font-size:20px">+</button>
+        </div>
+      </div>
+      <div style="background:#f7f6f2;border-radius:16px;padding:12px 14px">
+        <div style="font-size:12px;font-weight:600;color:#6f6e66;text-transform:uppercase;letter-spacing:.6px">Sets</div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px">
+          <button onClick="{{ decSets }}" style="appearance:none;border:0;background:#fff;width:36px;height:36px;border-radius:18px;font-size:20px">−</button>
+          <div style="font-size:28px;font-weight:700;font-variant-numeric:tabular-nums">{{ sets }}</div>
+          <button onClick="{{ incSets }}" style="appearance:none;border:0;background:#fff;width:36px;height:36px;border-radius:18px;font-size:20px">+</button>
+        </div>
+      </div>
+    </div>
+    <button onClick="{{ save }}" style="appearance:none;border:0;width:100%;margin-top:18px;height:54px;border-radius:27px;background:#2f6fdd;color:#fff;font-size:17px;font-weight:600" style-active="background:#1f55b8">{{ saveLabel }}</button>
+  </div>
+
+  <sc-if value="{{ hasTodaySets }}" hint-placeholder-val="{{ false }}">
+  <div style="margin-top:22px">
+    <div style="font-size:13px;font-weight:600;color:rgba(245,241,234,.7);text-transform:uppercase;letter-spacing:.6px;padding:0 4px">Logged today</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px">
+      <sc-for list="{{ todaySets }}" as="s" hint-placeholder-count="0">
+        <div style="display:flex;align-items:center;gap:12px;background:#fff;color:#17170f;border-radius:16px;padding:12px 16px;animation:popIn .2s ease">
+          <div style="font-size:17px;font-weight:600;font-variant-numeric:tabular-nums">{{ s.weight }} {{ unit }}</div>
+          <div style="font-size:15px;color:#6f6e66">{{ s.sets }} × {{ s.reps }}</div>
+          <sc-if value="{{ s.isPr }}" hint-placeholder-val="{{ false }}"><div style="margin-left:auto;font-size:12px;font-weight:700;color:#2f6fdd;background:#e8f0fd;padding:3px 8px;border-radius:8px">PR</div></sc-if>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+  </sc-if>
+</div>
+</sc-if>
+
+<!-- STATS -->
+<sc-if value="{{ isStats }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;overflow:auto;position:relative;padding:68px 20px 110px;box-sizing:border-box">
+  <div style="font-size:34px;font-weight:700;letter-spacing:-.5px;margin-top:8px">Stats</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px">
+    <div style="background:#fff;color:#17170f;border-radius:20px;padding:16px">
+      <div style="font-size:12px;font-weight:600;color:#6f6e66;text-transform:uppercase;letter-spacing:.6px">Streak</div>
+      <div style="font-size:32px;font-weight:700;margin-top:4px;letter-spacing:-1px">{{ streak }}<span style="font-size:15px;font-weight:500;color:#6f6e66;letter-spacing:0;margin-left:4px">weeks</span></div>
+    </div>
+    <div style="background:#fff;color:#17170f;border-radius:20px;padding:16px">
+      <div style="font-size:12px;font-weight:600;color:#6f6e66;text-transform:uppercase;letter-spacing:.6px">This week</div>
+      <div style="font-size:32px;font-weight:700;margin-top:4px;letter-spacing:-1px">{{ weekVolume }}<span style="font-size:15px;font-weight:500;color:#6f6e66;letter-spacing:0;margin-left:4px">{{ unit }}</span></div>
+    </div>
+  </div>
+
+  <div style="background:#fff;color:#17170f;border-radius:22px;padding:18px 18px 14px;margin-top:12px">
+    <div style="display:flex;gap:6px;overflow:auto;padding-bottom:4px">
+      <sc-for list="{{ statTabs }}" as="t" hint-placeholder-count="4">
+        <button onClick="{{ t.select }}" style="appearance:none;border:0;padding:7px 12px;border-radius:14px;font-size:13px;font-weight:600;white-space:nowrap;background:{{ t.bg }};color:{{ t.fg }}">{{ t.name }}</button>
+      </sc-for>
+    </div>
+    <div style="display:flex;align-items:baseline;gap:8px;margin-top:14px">
+      <div style="font-size:28px;font-weight:700;letter-spacing:-1px">{{ statPr }} {{ unit }}</div>
+      <div style="font-size:13px;color:#6f6e66">personal record</div>
+      <div style="margin-left:auto;font-size:13px;font-weight:600;color:#2a9d5c">{{ statDelta }}</div>
+    </div>
+    <svg viewBox="0 0 320 120" style="width:100%;height:auto;display:block;margin-top:10px;overflow:visible">
+      <line x1="0" y1="118" x2="320" y2="118" stroke="#ebeae4"></line>
+      <polyline points="{{ chartPoints }}" fill="none" stroke="#2f6fdd" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"></polyline>
+      <sc-for list="{{ chartDots }}" as="d" hint-placeholder-count="0">
+        <circle cx="{{ d.x }}" cy="{{ d.y }}" r="4" fill="#fff" stroke="#2f6fdd" stroke-width="2.5"></circle>
+      </sc-for>
+    </svg>
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:#6f6e66;margin-top:6px"><span>{{ chartStart }}</span><span>Today</span></div>
+  </div>
+
+  <div style="font-size:13px;font-weight:600;color:rgba(245,241,234,.7);text-transform:uppercase;letter-spacing:.6px;margin:22px 4px 10px">Personal records</div>
+  <div style="background:#fff;color:#17170f;border-radius:22px;overflow:hidden">
+    <sc-for list="{{ prRows }}" as="r" hint-placeholder-count="4">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;border-top:1px solid #f0efea">
+        <div style="font-size:16px;font-weight:500">{{ r.name }}</div>
+        <div style="margin-left:auto;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums">{{ r.pr }} {{ unit }}</div>
+        <div style="font-size:13px;color:#6f6e66;width:44px;text-align:right">{{ r.date }}</div>
+      </div>
+    </sc-for>
+  </div>
+</div>
+</sc-if>
+
+<!-- TAB BAR -->
+<div style="position:absolute;left:0;right:0;bottom:0;padding:0 16px 32px;display:flex;justify-content:center;pointer-events:none">
+  <div style="pointer-events:auto;display:flex;gap:4px;padding:5px;background:rgba(28,22,20,.72);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-radius:30px;box-shadow:0 2px 6px rgba(0,0,0,.06),0 10px 28px rgba(0,0,0,.08)">
+    <button onClick="{{ goHome }}" style="appearance:none;border:0;height:48px;padding:0 22px;border-radius:24px;font-size:15px;font-weight:600;background:{{ tabHomeBg }};color:{{ tabHomeFg }}">Today</button>
+    <button onClick="{{ goPlan }}" style="appearance:none;border:0;height:48px;padding:0 22px;border-radius:24px;font-size:15px;font-weight:600;background:{{ tabPlanBg }};color:{{ tabPlanFg }}">Plan</button>
+    <button onClick="{{ goStats }}" style="appearance:none;border:0;height:48px;padding:0 22px;border-radius:24px;font-size:15px;font-weight:600;background:{{ tabStatsBg }};color:{{ tabStatsFg }}">Stats</button>
+  </div>
+</div>
+</div>
+</x-import>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;units&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;lbs&quot;,&quot;kg&quot;],&quot;default&quot;:&quot;lbs&quot;,&quot;tsType&quot;:&quot;'lbs'|'kg'&quot;},&quot;weightStep&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[2.5,5,10],&quot;default&quot;:5,&quot;tsType&quot;:&quot;number&quot;,&quot;section&quot;:&quot;Logging&quot;}}">
+class Component extends DCLogic {
+  constructor(p) {
+    super(p);
+    const d = (n) => { const t = new Date(); t.setDate(t.getDate() - n); return t.toISOString().slice(0, 10); };
+    const mk = (id, name, w, step) => ({ id, name, history: [0, 7, 14, 21, 28, 35, 42].reverse().map((n, i) => ({ date: d(n), weight: w - step * (6 - i), reps: 10, sets: 3 })) });
+    this.state = {
+      screen: 'home', currentId: null, statId: 'cable',
+      weight: 0, reps: 10, sets: 3,
+      machines: [mk('cable', 'Cable machine', 70, 5), mk('legpress', 'Leg press', 270, 10), mk('latpull', 'Lat pulldown', 120, 5), mk('smith', 'Smith machine', 135, 10)],
+    };
+    this.state.machines.forEach(m => m.history.pop());
+    const mon = new Date(); mon.setHours(12,0,0,0); mon.setDate(mon.getDate() - ((mon.getDay() + 6) % 7) - 14);
+    this.plan = this.makeSamplePlan();
+    this.state.planStart = mon.toISOString().slice(0, 10);
+    this.state.showAll = false; this.state.planWeek = null;
+  }
+  makeSamplePlan() {
+    const split = [
+      { focus: 'Pull', items: ['latpull', 'cable'] },
+      { focus: 'Legs', items: ['legpress', 'smith'] },
+      null,
+      { focus: 'Push', items: ['smith', 'cable'] },
+      { focus: 'Legs + Back', items: ['legpress', 'latpull'] },
+      null, null,
+    ];
+    const weeks = [];
+    for (let w = 0; w < 12; w++) {
+      const [sets, reps] = w < 4 ? [3, 12] : w < 8 ? [4, 10] : [4, 8];
+      weeks.push(split.map(d => d ? { focus: d.focus, items: d.items.map(id => ({ id, sets, reps })) } : null));
+    }
+    return { name: 'Sample 12-week', weeks };
+  }
+  planDay(dateStr) {
+    const start = new Date(this.state.planStart + 'T12:00'), t = new Date(dateStr + 'T12:00');
+    const diff = Math.round((t - start) / 864e5);
+    if (diff < 0) return { week: 0, dow: 0, day: null };
+    const week = Math.floor(diff / 7), dow = diff % 7;
+    return { week, dow, day: week < this.plan.weeks.length ? this.plan.weeks[week][dow] : null };
+  }
+  today() { return new Date().toISOString().slice(0, 10); }
+  fmtDate(s) { const t = new Date(s + 'T12:00'); return t.toLocaleDateString(undefined, { month: 'short', day: 'numeric' }); }
+  pr(m) { return m.history.reduce((a, h) => Math.max(a, h.weight), 0); }
+  last(m) { return m.history[m.history.length - 1]; }
+  planVals(pd, machines, today) {
+    const nW = this.plan.weeks.length;
+    const sel = this.state.planWeek ?? Math.min(pd.week, nW - 1);
+    const start = new Date(this.state.planStart + 'T12:00');
+    const dows = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const name = (id) => (machines.find(m => m.id === id) || {}).name || id;
+    const loggedOn = (id, ds) => machines.find(m => m.id === id)?.history.some(h => h.date === ds);
+    let done = 0, total = 0;
+    const weekDays = this.plan.weeks[sel].map((d, i) => {
+      const dt = new Date(start); dt.setDate(dt.getDate() + sel * 7 + i);
+      const ds = dt.toISOString().slice(0, 10), isToday = ds === today;
+      let status = '', statusColor = 'inherit';
+      if (d) { total++; const all = d.items.every(it => loggedOn(it.id, ds)); if (all) { done++; status = 'Done'; statusColor = '#2a9d5c'; } else if (ds < today) { status = 'Missed'; statusColor = '#c8301f'; } else if (isToday) { status = 'Today'; statusColor = '#2f6fdd'; } }
+      return { dow: dows[i], dom: dt.getDate(), focus: d ? d.focus : 'Rest', detail: d ? d.items.map(it => `${name(it.id)} ${it.sets}×${it.reps}`).join(' · ') : 'Recovery',
+        status, statusColor, bg: d ? '#fff' : 'rgba(20,15,13,.55)', fg: d ? '#17170f' : '#f5f1ea', ring: isToday ? '0 0 0 2.5px #2f6fdd' : 'none' };
+    });
+    return {
+      planName: this.plan.name, planWeek: sel + 1, planWeeks: nW, weekDays,
+      weekProgress: total ? `${done}/${total} workouts` : '',
+      weekChips: this.plan.weeks.map((_, i) => ({ label: 'W' + (i + 1), select: () => this.setState({ planWeek: i }),
+        bg: i === sel ? '#f5f1ea' : 'rgba(20,15,13,.6)', fg: i === sel ? '#17170f' : '#f5f1ea', ring: i === pd.week && i !== sel ? 'inset 0 0 0 1.5px #2f6fdd' : 'none' })),
+    };
+  }
+  renderVals() {
+    const { screen, machines, currentId, statId, weight, reps, sets } = this.state;
+    const unit = this.props.units ?? 'lbs';
+    const step = this.props.weightStep ?? 5;
+    const today = this.today();
+    const cur = machines.find(m => m.id === currentId) || machines[0];
+    const stat = machines.find(m => m.id === statId) || machines[0];
+    const setS = (patch) => this.setState(patch);
+    const pd = this.planDay(today);
+    const planItems = pd.day ? pd.day.items : [];
+    const targetFor = (id) => planItems.find(i => i.id === id);
+    const open = (m) => () => { const l = this.last(m), t = targetFor(m.id); setS({ screen: 'log', currentId: m.id, weight: l ? l.weight : 50, reps: t ? t.reps : l ? l.reps : 10, sets: t ? t.sets : l ? l.sets : 3 }); };
+    const todaySets = cur.history.filter(h => h.date === today).slice().reverse();
+    const curPr = this.pr(cur);
+    const todayAll = machines.flatMap(m => m.history.filter(h => h.date === today).map(h => ({ ...h, name: m.name })));
+    const todayVol = todayAll.reduce((a, h) => a + h.weight * h.reps * h.sets, 0);
+    const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+    const ws = weekStart.toISOString().slice(0, 10);
+    const weekVolume = machines.flatMap(m => m.history).filter(h => h.date >= ws).reduce((a, h) => a + h.weight * h.reps * h.sets, 0);
+    const hist = stat.history.slice(-8);
+    const ws_ = hist.map(h => h.weight); const mn = Math.min(...ws_), mx = Math.max(...ws_); const rng = Math.max(mx - mn, 1);
+    const chartDots = hist.map((h, i) => ({ x: Math.round(8 + i * (304 / Math.max(hist.length - 1, 1))), y: Math.round(108 - ((h.weight - mn) / rng) * 96) }));
+    const delta = hist.length > 1 ? hist[hist.length - 1].weight - hist[0].weight : 0;
+    const weeks = new Set(machines.flatMap(m => m.history).map(h => { const t = new Date(h.date + 'T12:00'); t.setDate(t.getDate() - t.getDay()); return t.toISOString().slice(0, 10); }));
+    let streak = 0; const c = new Date(weekStart);
+    while (weeks.has(c.toISOString().slice(0, 10))) { streak++; c.setDate(c.getDate() - 7); }
+    const act = '#f5f1ea', inact = 'transparent';
+    return {
+      unit, isHome: screen === 'home', isLog: screen === 'log', isStats: screen === 'stats', isPlan: screen === 'plan',
+      todayLabel: new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }),
+      dayTitle: pd.day ? pd.day.focus + ' day' : 'Today',
+      isRestDay: !pd.day,
+      canToggleAll: !!pd.day,
+      toggleAllLabel: this.state.showAll ? 'Show only today\'s plan' : 'Log a different machine',
+      toggleAll: () => setS({ showAll: !this.state.showAll }),
+      homeItems: (pd.day && !this.state.showAll ? planItems.map(i => machines.find(m => m.id === i.id)) : machines).map(m => {
+        const l = this.last(m), t = targetFor(m.id);
+        return { id: m.id, name: m.name, open: open(m), done: !!(l && l.date === today), hasTarget: !!t, target: t ? `Plan: ${t.sets} × ${t.reps}` : '',
+          lastLabel: l ? (l.date === today ? `Today · ${l.weight} ${unit}` : `Last ${l.weight} ${unit}`) : 'No sets yet' };
+      }),
+      todaySummary: pd.day ? `Week ${pd.week + 1} of ${this.plan.weeks.length} · ${planItems.filter(i => { const l = this.last(machines.find(m => m.id === i.id)); return l && l.date === today; }).length} of ${planItems.length} done` : todayAll.length ? `${todayAll.length} exercise${todayAll.length > 1 ? 's' : ''} · ${todayVol.toLocaleString()} ${unit} total` : 'Tap a machine to log your first set',
+      machines: machines.map(m => { const l = this.last(m); return { id: m.id, name: m.name, open: open(m), lastLabel: l ? (l.date === today ? `Today · ${l.weight} ${unit}` : `Last ${l.weight} ${unit} · ${l.sets}×${l.reps}`) : 'No sets yet' }; }),
+      current: { id: cur.id, name: cur.name, pr: curPr, hasTarget: !!targetFor(cur.id), target: targetFor(cur.id) ? `${targetFor(cur.id).sets} × ${targetFor(cur.id).reps}` : '' },
+      weight, reps, sets,
+      incWeight: () => setS({ weight: weight + step }), decWeight: () => setS({ weight: Math.max(0, weight - step) }),
+      incReps: () => setS({ reps: reps + 1 }), decReps: () => setS({ reps: Math.max(1, reps - 1) }),
+      incSets: () => setS({ sets: sets + 1 }), decSets: () => setS({ sets: Math.max(1, sets - 1) }),
+      saveLabel: weight > curPr ? 'Save set · New PR' : 'Save set',
+      save: () => this.setState(s => ({ machines: s.machines.map(m => m.id === cur.id ? { ...m, history: [...m.history, { date: today, weight, reps, sets, isPr: weight > curPr }] } : m) })),
+      hasTodaySets: todaySets.length > 0,
+      todaySets: todaySets.map(h => ({ ...h, isPr: !!h.isPr })),
+      goHome: () => setS({ screen: 'home' }), goStats: () => setS({ screen: 'stats' }), goPlan: () => setS({ screen: 'plan', planWeek: null }),
+      tabHomeBg: (screen === 'home' || screen === 'log') ? act : inact, tabHomeFg: (screen === 'home' || screen === 'log') ? '#17170f' : '#f5f1ea',
+      tabPlanBg: screen === 'plan' ? act : inact, tabPlanFg: screen === 'plan' ? '#17170f' : '#f5f1ea',
+      ...this.planVals(pd, machines, today),
+      tabStatsBg: screen === 'stats' ? act : inact, tabStatsFg: screen === 'stats' ? '#17170f' : '#f5f1ea',
+      streak, weekVolume: weekVolume.toLocaleString(),
+      statTabs: machines.map(m => ({ name: m.name, select: () => setS({ statId: m.id }), bg: m.id === stat.id ? '#17170f' : '#f0efea', fg: m.id === stat.id ? '#fff' : '#17170f' })),
+      statPr: this.pr(stat), statDelta: delta > 0 ? `+${delta} ${unit}` : delta < 0 ? `${delta} ${unit}` : '',
+      chartPoints: chartDots.map(p => `${p.x},${p.y}`).join(' '), chartDots,
+      chartStart: hist.length ? this.fmtDate(hist[0].date) : '',
+      prRows: machines.map(m => { const p = this.pr(m); const h = m.history.find(x => x.weight === p); return { name: m.name, pr: p, date: h ? this.fmtDate(h.date) : '' }; }),
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e0b0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PainCave">
+<title>The PainCave</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" href="./icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="./icon.svg">
+<link rel="stylesheet" href="./app.css">
+</head>
+<body>
+<div class="app" id="app">
+  <div class="bg"><img id="cave" alt="" src="https://commons.wikimedia.org/wiki/Special:FilePath/Thors_cave,_view_from_inside.jpg?width=960" onerror="this.remove()"></div>
+  <div class="scrim"></div>
+  <main class="screen" id="screen"><div class="loading">Lighting the torches…</div></main>
+  <nav class="tabbar" id="tabbar" hidden></nav>
+  <input type="file" id="photoInput" accept="image/*" hidden>
+</div>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
