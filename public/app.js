@@ -26,7 +26,31 @@ const local = {
 }
 
 // ── API ────────────────────────────────────────────────────────────────────────────────────────────────
+// Two modes. "server": a PainCave server answers /api/* (npm start). "phone": no server (GitHub Pages), so the same
+// API code (./core/api.mjs) runs right here and keeps the data in this phone's storage.
+let mode = 'server'
+let localDispatch = null
+async function detectMode() {
+  try {
+    const ctl = new AbortController()
+    const t = setTimeout(() => ctl.abort(), 2500)
+    const r = await fetch('./api/health', { signal: ctl.signal, cache: 'no-store' })
+    clearTimeout(t)
+    if (r.ok && (await r.json()).app === 'PainCave') return
+  } catch {}
+  mode = 'phone'
+  const [{ createRouter }, { BrowserStore }] = await Promise.all([import('./core/api.mjs'), import('./core/browser-store.mjs')])
+  localDispatch = createRouter(new BrowserStore())
+}
+
 async function api(method, path, body) {
+  if (mode === 'phone') {
+    const url = new URL(path, 'https://paincave.local')
+    const out = await localDispatch(method, url.pathname, url.searchParams, body ? JSON.parse(JSON.stringify(body)) : {})
+    const data = out.body == null ? null : JSON.parse(JSON.stringify(out.body))
+    if (out.status >= 400) throw new Error(data?.error ?? `Request failed (${out.status})`)
+    return data
+  }
   const headers = { 'Content-Type': 'application/json' }
   const token = local.get('token')
   if (token) headers.Authorization = `Bearer ${token}`
@@ -57,7 +81,12 @@ const ICON = {
 }
 
 // ── Photos (per exercise, stored on this device) ───────────────────────────────────────────────────────
-const photoOf = (id) => local.get('photo.' + id)
+// Bundled photos (Wikimedia Commons, credited in Settings) by exercise; your own photo always wins.
+let PHOTOS = { exercises: {}, files: {} }
+fetch('./photos/credits.json').then((r) => (r.ok ? r.json() : null)).then((j) => { if (j) { PHOTOS = j; render() } }).catch(() => {})
+const bundledPhoto = (id) => { const k = PHOTOS.exercises[id]; return k && PHOTOS.files[k] ? { url: `./photos/${PHOTOS.files[k].file}`, ...PHOTOS.files[k] } : null }
+const userPhoto = (id) => local.get('photo.' + id)
+const photoOf = (id) => userPhoto(id) ?? bundledPhoto(id)?.url ?? null
 let photoTarget = null
 function pickPhoto(id) { photoTarget = id; $('#photoInput').click() }
 $('#photoInput').addEventListener('change', async (e) => {
@@ -271,7 +300,8 @@ function viewLog() {
     ${c.cues?.length ? `<div class="hint">${c.cues.map(esc).join(' · ')}</div>` : ''}
     ${c.swaps?.length ? `<div class="swaps">${c.swaps.map((x) => `<button class="${x.exerciseId === c.exerciseId ? 'on chip' : ''}" data-act="swap" data-id="${x.exerciseId}">${x.exerciseId === c.exerciseId ? '✓ ' : 'Swap: '}${esc(x.name)}</button>`).join('')}</div>` : ''}
     <div class="log-photo">${photoOf(c.exerciseId) ? `<img src="${photoOf(c.exerciseId)}" alt="${esc(c.name)}">` : `<div class="ph">${ICON.photo.replace('<svg', '<svg width="26" height="26"')} Add a photo of this machine</div>`}
-      <button class="photo-btn" data-act="pickPhoto" data-id="${c.exerciseId}">${photoOf(c.exerciseId) ? 'Change photo' : 'Add photo'}</button></div>
+      <button class="photo-btn" data-act="pickPhoto" data-id="${c.exerciseId}">${userPhoto(c.exerciseId) ? 'Change photo' : 'Use my photo'}</button>
+      ${userPhoto(c.exerciseId) ? `<button class="photo-btn" style="top:auto;bottom:10px" data-act="clearPhoto" data-id="${c.exerciseId}">Reset</button>` : bundledPhoto(c.exerciseId) ? `<div class="photo-credit">${esc(bundledPhoto(c.exerciseId).artist || 'Wikimedia Commons')} · ${esc(bundledPhoto(c.exerciseId).license)}</div>` : ''}</div>
     <div class="card entry">
       <div class="label-sm">Weight</div>
       <div class="stepper-big">
@@ -546,6 +576,14 @@ function viewSettings(setup = false) {
     </div>
     ${S.needToken || local.get('token') ? `<div class="card entry"><div class="field"><label class="label-sm" for="token">Access token</label><input class="input" id="token" data-bind="token" value="${esc(f.token)}" autocomplete="off"></div></div>` : ''}
     <button class="btn" style="margin-top:18px" data-act="saveSettings" ${S.busy ? 'disabled' : ''}>${setup ? 'Build my plan' : 'Save settings'}</button>
+    ${setup ? `<button class="btn ghost" style="margin-top:12px" data-act="restore">Restore from a backup</button>` : `
+    <div class="card entry">
+      <div class="label-sm">Your data</div>
+      <div class="hint">${mode === 'phone' ? 'Saved on this phone only. Download a backup now and then (and before switching phones); restore it on any device.' : 'Saved on your PainCave server.'}${local.get('lastBackup') ? ` Last backup ${esc(fmtDate(local.get('lastBackup')))}.` : ''}</div>
+      <div class="row-btns" style="margin-top:14px"><button class="btn" data-act="backup">Download backup</button><button class="btn light" style="background:var(--control)" data-act="restore">Restore</button></div>
+    </div>
+    <details class="card entry mini" style="color:var(--ink)"><summary style="color:var(--ink)">Photo credits</summary>
+      <div style="margin-top:8px;color:var(--muted);line-height:1.5">${Object.values(PHOTOS.files).map((f) => `<div><a href="${esc(f.page)}" target="_blank" rel="noopener">${esc(f.title.replace(/^File:/, ''))}</a> · ${esc(f.artist || 'Unknown')} · ${f.licenseUrl ? `<a href="${esc(f.licenseUrl)}" target="_blank" rel="noopener">${esc(f.license)}</a>` : esc(f.license)}</div>`).join('') || 'No bundled photos.'}</div></details>`}
     <div class="credit">Cave photo: <a href="https://commons.wikimedia.org/wiki/File:Thors_cave,_view_from_inside.jpg" target="_blank" rel="noopener">Iankelsall1 · Wikimedia Commons</a></div>`
 }
 
@@ -642,6 +680,21 @@ const actions = {
     openLog({ ...c, exerciseId: id, name: x.name, cues: ex?.cues ?? (id === c.plannedId ? c.cues : []), suggestion: id === c.plannedId ? c.suggestion : null })
   },
   pickPhoto({ id }) { pickPhoto(id) },
+  clearPhoto({ id }) { local.del('photo.' + id); render() },
+  async backup() {
+    try {
+      const data = await api('GET', '/api/export')
+      const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' })
+      const a = document.createElement('a')
+      a.href = URL.createObjectURL(blob)
+      a.download = `paincave-backup-${localDate()}.json`
+      document.body.appendChild(a); a.click(); a.remove()
+      setTimeout(() => URL.revokeObjectURL(a.href), 5000)
+      local.set('lastBackup', localDate())
+      toast('Backup downloaded')
+    } catch (e) { toast(e.message, true) }
+  },
+  restore() { $('#restoreInput').click() },
   adj({ k, d }) {
     const e = S.entry
     const dir = Number(d)
@@ -797,8 +850,26 @@ document.addEventListener('input', (e) => {
 })
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && S.view && S.profile?.setup !== false) actions.closeView() })
 
+$('#restoreInput').addEventListener('change', async (e) => {
+  const f = e.target.files?.[0]
+  e.target.value = ''
+  if (!f) return
+  try {
+    const data = JSON.parse(await f.text())
+    if (!confirm('Replace everything in PainCave with this backup?')) return
+    const r = await api('POST', '/api/import', data)
+    toast(`Restored ${r.imported.workouts} workouts, ${r.imported.swims} swims`)
+    Object.assign(S, { view: null, tab: 'today', program: null, weekCache: {}, allExercises: null, lifts: null, swimStats: null, today: null })
+    S.profile = await api('GET', '/api/profile')
+    if (S.profile.setup === false) S.form = settingsForm()
+  } catch (err) { toast(err.message.includes('JSON') ? 'That file is not a PainCave backup' : err.message, true) }
+  render()
+})
+
 // ── Boot ───────────────────────────────────────────────────────────────────────────────────────────────
 async function boot() {
+  await detectMode()
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('./sw.js').catch(() => {})
   try {
     S.profile = await api('GET', '/api/profile')
     if (S.profile.setup === false) S.form = settingsForm()

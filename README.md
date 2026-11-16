@@ -28,6 +28,20 @@ npm test
 
 Open http://localhost:5190 on your phone (same Wi-Fi: use your computer's IP) and use **Add to Home Screen** to get a full-screen app.
 
+## Use it anywhere (GitHub Pages)
+
+The app also runs with **no server**. When it can't find a PainCave server, it loads the same plan and tracking code (`src/api.mjs`, served as `core/`) inside the browser and keeps your data on the phone. That lets it live on GitHub Pages and work on cell data or with no signal at all, because a service worker caches it.
+
+```bash
+npm run build:pages     # → dist/ (public/ + core/), what Pages serves
+```
+
+`.github/workflows/pages.yml` runs the tests, builds and deploys on every push to `main`. One-time setup on GitHub: **Settings → Pages → Source: GitHub Actions**.
+
+On your iPhone, open the Pages URL in Safari, then **Share → Add to Home Screen**.
+
+**Your data stays on the phone.** Use **Settings → Download backup** now and then, and **Restore** to move it to another phone or browser. Clearing Safari's website data erases it.
+
 ## The app (`public/`)
 
 Built from the Claude Design handoff (`docs/design/`). It uses plain HTML, CSS and JS, with no build step.

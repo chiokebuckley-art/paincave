@@ -74,4 +74,9 @@ export class Store {
   export() {
     return structuredClone(this.data)
   }
+
+  replace(data) {
+    this.data = { ...emptyData(), ...data }
+    this.save()
+  }
 }
