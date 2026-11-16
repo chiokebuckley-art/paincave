@@ -84,7 +84,7 @@ const ICON = {
 // Bundled photos (Wikimedia Commons, credited in Settings) by exercise; your own photo always wins.
 let PHOTOS = { exercises: {}, files: {} }
 fetch('./photos/credits.json').then((r) => (r.ok ? r.json() : null)).then((j) => { if (j) { PHOTOS = j; render() } }).catch(() => {})
-const bundledPhoto = (id) => { const k = PHOTOS.exercises[id]; return k && PHOTOS.files[k] ? { url: `./photos/${PHOTOS.files[k].file}`, ...PHOTOS.files[k] } : null }
+const bundledPhoto = (id) => { const k = PHOTOS.exercises[id]; return k && PHOTOS.files[k] ? PHOTOS.files[k] : null }
 const userPhoto = (id) => local.get('photo.' + id)
 const photoOf = (id) => userPhoto(id) ?? bundledPhoto(id)?.url ?? null
 let photoTarget = null
@@ -105,7 +105,7 @@ $('#photoInput').addEventListener('change', async (e) => {
 })
 const photoHtml = (id, name) => {
   const p = photoOf(id)
-  return p ? `<img src="${p}" alt="${esc(name)}">` : `<div class="ph">${ICON.photo}<span>${esc(name)}</span></div>`
+  return p ? `<img src="${esc(p)}" alt="${esc(name)}" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'ph',textContent:this.alt}))">` : `<div class="ph">${ICON.photo}<span>${esc(name)}</span></div>`
 }
 
 // ── Toast ──────────────────────────────────────────────────────────────────────────────────────────────

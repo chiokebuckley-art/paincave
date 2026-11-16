@@ -1,0 +1,274 @@
+{
+ "source": "Wikimedia Commons (freely licensed; see each file page)",
+ "exercises": {
+  "barbell_back_squat": "squat",
+  "smith_squat": "smith",
+  "goblet_squat": "dumbbells",
+  "leg_press": "legpress",
+  "barbell_rdl": "rdl",
+  "smith_rdl": "smith",
+  "db_rdl": "rdl",
+  "back_extension": "backext",
+  "db_step_up": "dumbbells",
+  "db_reverse_lunge": "lunge",
+  "split_squat": "splitsquat",
+  "leg_curl": "legcurl",
+  "ball_hamstring_curl": "ball",
+  "machine_calf_raise": "calf",
+  "smith_calf_raise": "smith",
+  "db_single_leg_calf_raise": "dumbbells",
+  "hip_abductor": "abductor",
+  "cable_hip_abduction": "cable",
+  "side_plank": "sideplank",
+  "lat_pulldown": "latpull",
+  "assisted_pullup": "pullup",
+  "pullup_negative": "pullup",
+  "seated_row_machine": "row",
+  "cable_row": "row",
+  "db_row": "dumbbells",
+  "db_bench_press": "dbbench",
+  "chest_press_machine": "chestpress",
+  "pushup": "pushup",
+  "db_shoulder_press": "dbpress",
+  "shoulder_press_machine": "pressmachine",
+  "straight_arm_pulldown": "cable",
+  "db_pullover": "pullover",
+  "face_pull": "cablework",
+  "reverse_pec_deck": "pecdeck",
+  "db_rear_delt_raise": "reardelt",
+  "dead_bug": "plank",
+  "pallof_press": "cable",
+  "suitcase_carry": "carry",
+  "cable_woodchop": "cablework",
+  "ball_rollout": "ball",
+  "plank": "plank",
+  "hollow_hold": "plank",
+  "prone_flutter_kick": "plank"
+ },
+ "files": {
+  "squat": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Woman_doing_squat_workout_in_gym_with_barbell%2C_back_view.jpg/500px-Woman_doing_squat_workout_in_gym_with_barbell%2C_back_view.jpg",
+   "title": "File:Woman doing squat workout in gym with barbell, back view.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Woman_doing_squat_workout_in_gym_with_barbell,_back_view.jpg",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "artist": "Nenad Stojkovic"
+  },
+  "smith": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/6/6d/Smith-machine-shrugs-1.png",
+   "title": "File:Smith-machine-shrugs-1.png",
+   "page": "https://commons.wikimedia.org/wiki/File:Smith-machine-shrugs-1.png",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "artist": "Everkinetic"
+  },
+  "legpress": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Young_man_using_a_leg_press_machine_at_the_gym.jpg/500px-Young_man_using_a_leg_press_machine_at_the_gym.jpg",
+   "title": "File:Young man using a leg press machine at the gym.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Young_man_using_a_leg_press_machine_at_the_gym.jpg",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "artist": "Nenad Stojkovic"
+  },
+  "rdl": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/e/e8/Romanian-deadlift-1.png",
+   "title": "File:Romanian-deadlift-1.png",
+   "page": "https://commons.wikimedia.org/wiki/File:Romanian-deadlift-1.png",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "artist": "Everkinetic"
+  },
+  "dumbbells": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/5/50/A_close-up_view_of_a_set_of_heavy_dumbbells.jpg/500px-A_close-up_view_of_a_set_of_heavy_dumbbells.jpg",
+   "title": "File:A close-up view of a set of heavy dumbbells.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:A_close-up_view_of_a_set_of_heavy_dumbbells.jpg",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "artist": "Shixart1985"
+  },
+  "backext": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Hyper_bench.jpg/500px-Hyper_bench.jpg",
+   "title": "File:Hyper bench.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Hyper_bench.jpg",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "artist": "Teemeah"
+  },
+  "lunge": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/e9/Dumbbell_lunges.jpg/500px-Dumbbell_lunges.jpg",
+   "title": "File:Dumbbell lunges.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Dumbbell_lunges.jpg",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "artist": "Tyler Read"
+  },
+  "splitsquat": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Airman_performing_lunge.jpg/500px-Airman_performing_lunge.jpg",
+   "title": "File:Airman performing lunge.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Airman_performing_lunge.jpg",
+   "license": "Public domain",
+   "licenseUrl": null,
+   "artist": "U.S. Air Force photo by Senior Airman Myles Stepp"
+  },
+  "legcurl": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/c/c6/LyingLegCurlMachineExercise.JPG",
+   "title": "File:LyingLegCurlMachineExercise.JPG",
+   "page": "https://commons.wikimedia.org/wiki/File:LyingLegCurlMachineExercise.JPG",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+   "artist": "GeorgeStepanek"
+  },
+  "ball": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Girl_doing_stability_ball_crunches.jpg/500px-Girl_doing_stability_ball_crunches.jpg",
+   "title": "File:Girl doing stability ball crunches.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Girl_doing_stability_ball_crunches.jpg",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "artist": "PTPioneer"
+  },
+  "calf": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/e/e7/SeatedCalfRaiseMachineExercise.JPG",
+   "title": "File:SeatedCalfRaiseMachineExercise.JPG",
+   "page": "https://commons.wikimedia.org/wiki/File:SeatedCalfRaiseMachineExercise.JPG",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+   "artist": "George Stepanek"
+  },
+  "abductor": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Hip_abductor_machine.jpg/500px-Hip_abductor_machine.jpg",
+   "title": "File:Hip abductor machine.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Hip_abductor_machine.jpg",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "artist": "Teemeah"
+  },
+  "cable": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/eb/Functional_Trainer_Exercise_Machine_at_Gym.jpg/500px-Functional_Trainer_Exercise_Machine_at_Gym.jpg",
+   "title": "File:Functional Trainer Exercise Machine at Gym.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Functional_Trainer_Exercise_Machine_at_Gym.jpg",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "artist": "KeepActive Australia from Melbourne, VIC, Australia"
+  },
+  "cablework": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Strong_woman_using_cable_machine_for_upper_body_workout_in_gym.jpg/500px-Strong_woman_using_cable_machine_for_upper_body_workout_in_gym.jpg",
+   "title": "File:Strong woman using cable machine for upper body workout in gym.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Strong_woman_using_cable_machine_for_upper_body_workout_in_gym.jpg",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "artist": "Shixart1985"
+  },
+  "sideplank": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/7/7e/Side_Plank.jpg/500px-Side_Plank.jpg",
+   "title": "File:Side Plank.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Side_Plank.jpg",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "artist": "Jaykayfit"
+  },
+  "latpull": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/Girl_doing_lat_pulldown_exercise.jpg/500px-Girl_doing_lat_pulldown_exercise.jpg",
+   "title": "File:Girl doing lat pulldown exercise.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Girl_doing_lat_pulldown_exercise.jpg",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "artist": "Tyler Read"
+  },
+  "pullup": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Girl_doing_pull_up_top_position.jpg/500px-Girl_doing_pull_up_top_position.jpg",
+   "title": "File:Girl doing pull up top position.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Girl_doing_pull_up_top_position.jpg",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "artist": "PTPioneer"
+  },
+  "row": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/Woman_using_a_seated_cable_row_machine_at_the_gym.jpg/500px-Woman_using_a_seated_cable_row_machine_at_the_gym.jpg",
+   "title": "File:Woman using a seated cable row machine at the gym.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Woman_using_a_seated_cable_row_machine_at_the_gym.jpg",
+   "license": "CC0",
+   "licenseUrl": "http://creativecommons.org/publicdomain/zero/1.0/deed.en",
+   "artist": "Miguel Angel Omaña Rojas"
+  },
+  "dbbench": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Personal_training_dumbbell_chest_press.jpg/500px-Personal_training_dumbbell_chest_press.jpg",
+   "title": "File:Personal training dumbbell chest press.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Personal_training_dumbbell_chest_press.jpg",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "artist": "PTPioneer"
+  },
+  "chestpress": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f9/Girl_doing_chest_press_machine_exercise.jpg/500px-Girl_doing_chest_press_machine_exercise.jpg",
+   "title": "File:Girl doing chest press machine exercise.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Girl_doing_chest_press_machine_exercise.jpg",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "artist": "Tyler Read"
+  },
+  "pushup": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/c/cf/Push-up-2.png",
+   "title": "File:Push-up-2.png",
+   "page": "https://commons.wikimedia.org/wiki/File:Push-up-2.png",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "artist": "Everkinetic"
+  },
+  "dbpress": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Girl_doing_dumbbell_shoulder_press_02.jpg/500px-Girl_doing_dumbbell_shoulder_press_02.jpg",
+   "title": "File:Girl doing dumbbell shoulder press 02.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Girl_doing_dumbbell_shoulder_press_02.jpg",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "artist": "Tyler Read"
+  },
+  "pressmachine": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/1/1f/ShoulderPressMachineExercise.JPG",
+   "title": "File:ShoulderPressMachineExercise.JPG",
+   "page": "https://commons.wikimedia.org/wiki/File:ShoulderPressMachineExercise.JPG",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "http://creativecommons.org/licenses/by-sa/3.0/",
+   "artist": "GeorgeStepanek"
+  },
+  "pecdeck": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/c/cf/Pec_deck_Fly.jpg/500px-Pec_deck_Fly.jpg",
+   "title": "File:Pec deck Fly.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Pec_deck_Fly.jpg",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0",
+   "artist": "Aliva Sahoo"
+  },
+  "reardelt": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/3/31/Bent-over-cable-lateral-raises-2.png",
+   "title": "File:Bent-over-cable-lateral-raises-2.png",
+   "page": "https://commons.wikimedia.org/wiki/File:Bent-over-cable-lateral-raises-2.png",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "artist": "Everkinetic"
+  },
+  "carry": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/8/8f/Farmer%27s_Walk_small.jpg",
+   "title": "File:Farmer's Walk small.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Farmer%27s_Walk_small.jpg",
+   "license": "CC BY 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/3.0",
+   "artist": "Johann van den Bergh"
+  },
+  "plank": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/f5/Personal_training_plank_exercise_instruction.jpg/500px-Personal_training_plank_exercise_instruction.jpg",
+   "title": "File:Personal training plank exercise instruction.jpg",
+   "page": "https://commons.wikimedia.org/wiki/File:Personal_training_plank_exercise_instruction.jpg",
+   "license": "CC BY 2.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/2.0",
+   "artist": "PTPioneer"
+  },
+  "pullover": {
+   "url": "https://upload.wikimedia.org/wikipedia/commons/b/bf/Dumbbell-bent-arm-pullover-1.png",
+   "title": "File:Dumbbell-bent-arm-pullover-1.png",
+   "page": "https://commons.wikimedia.org/wiki/File:Dumbbell-bent-arm-pullover-1.png",
+   "license": "CC BY-SA 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/3.0",
+   "artist": "Everkinetic"
+  }
+ }
+}
